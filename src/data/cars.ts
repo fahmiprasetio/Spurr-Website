@@ -140,6 +140,7 @@ export const cars: Car[] = [
       "A rolling work of art that combines a Mercedes-AMG twin-turbo V12 with artisanal craftsmanship.",
     color: "#7C3AED",
     bgGradient: "from-purple-50 to-white",
+    sequenceFolder: "huayra roadster bc",
   },
   {
     id: "koenigsegg-jesko",
@@ -153,6 +154,7 @@ export const cars: Car[] = [
       "Engineered to be the fastest car in the world, with a theoretical top speed over 530 km/h.",
     color: "#EA580C",
     bgGradient: "from-orange-50 to-white",
+    sequenceFolder: "Jesko Absolut",
   },
   {
     id: "mclaren-p1",
@@ -166,6 +168,7 @@ export const cars: Car[] = [
       "One of the holy trinity of hypercars, blending F1 technology with road-car usability.",
     color: "#F97316",
     bgGradient: "from-orange-50 to-white",
+    sequenceFolder: "mclaren p1",
   },
   {
     id: "aston-martin-valkyrie",

@@ -141,6 +141,9 @@ export default function CarCard({ car }: { car: Car }) {
   }, [car.sequenceFolder]);
 
   // Animation logic
+  const FORWARD_DURATION = 2000; // ms total for forward play
+  const REWIND_DURATION = 1000;  // ms total for rewind
+
   useEffect(() => {
     if (frames.length === 0) return;
     // Clamp currentFrame if frames.length changes (e.g. frame count reduced)
@@ -149,6 +152,8 @@ export default function CarCard({ car }: { car: Car }) {
       if (prev < 0) return 0;
       return prev;
     });
+    const forwardInterval = Math.max(16, Math.floor(FORWARD_DURATION / frames.length));
+    const rewindInterval = Math.max(8, Math.floor(REWIND_DURATION / frames.length));
     if (isHovered) {
       // Play forward
       setCurrentFrame(0);
@@ -160,7 +165,7 @@ export default function CarCard({ car }: { car: Car }) {
           }
           return prev + 1;
         });
-      }, 40);
+      }, forwardInterval);
     } else {
       // Rewind backward
       if (intervalRef.current) clearInterval(intervalRef.current);

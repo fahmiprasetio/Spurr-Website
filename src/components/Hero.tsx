@@ -27,7 +27,7 @@ export default function Hero() {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <p className="text-xs tracking-[0.4em] uppercase text-gray-400 mb-8">
-            The Finest Collection
+            An Unrivalled Automotive Edit
           </p>
         </motion.div>
 
@@ -47,9 +47,7 @@ export default function Hero() {
         >
           <div className="w-20 h-px bg-black mx-auto mt-10 mb-8" />
           <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed font-light">
-            Where speed meets elegance. Explore the world&apos;s most iconic
-            sport cars — from Italian thoroughbreds to Japanese engineering
-            marvels.
+            A definitive showcase of the world&apos;s most extraordinary performance automobiles — where Italian artistry, German precision, and Japanese mastery converge in singular pursuit of excellence.
           </p>
         </motion.div>
 
@@ -63,13 +61,13 @@ export default function Hero() {
             href="#collection"
             className="px-10 py-4 bg-black text-white text-sm tracking-[0.2em] uppercase hover:bg-gray-900 transition-all duration-300"
           >
-            Explore Collection
+            Explore the Collection
           </a>
           <a
             href="#brands"
             className="px-10 py-4 border border-black text-black text-sm tracking-[0.2em] uppercase hover:bg-black hover:text-white transition-all duration-300"
           >
-            View Brands
+            Our Marques
           </a>
         </motion.div>
 
@@ -83,19 +81,19 @@ export default function Hero() {
           <div>
             <p className="text-3xl font-bold text-black">50+</p>
             <p className="text-xs tracking-wider uppercase text-gray-400 mt-1">
-              Models
+              Vehicles
             </p>
           </div>
           <div>
             <p className="text-3xl font-bold text-black">12</p>
             <p className="text-xs tracking-wider uppercase text-gray-400 mt-1">
-              Brands
+              Marques
             </p>
           </div>
           <div>
             <p className="text-3xl font-bold text-black">∞</p>
             <p className="text-xs tracking-wider uppercase text-gray-400 mt-1">
-              Passion
+              Pursuit
             </p>
           </div>
         </motion.div>
