@@ -6,8 +6,8 @@ import { cars } from "@/data/cars";
 
 export default function CollectionSection() {
   return (
-    <section id="collection" className="py-32" style={{background: '#fafafa'}}>
-      <div className="max-w-5xl mx-auto px-6 lg:px-8">
+    <section id="collection" className="w-full py-32 flex flex-col items-center" style={{background: '#fafafa'}}>
+      <div className="w-full max-w-5xl px-6 lg:px-8">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

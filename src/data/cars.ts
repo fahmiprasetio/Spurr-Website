@@ -9,41 +9,14 @@ export interface Car {
   description: string;
   color: string; // CSS gradient for the car silhouette
   bgGradient: string;
-  baseImage?: string;        // path inside public/car-image(based)/
-  sequenceFolder?: string;  // subfolder inside public/car-image(sequences)/
-  sequenceCount?: number;   // total number of frames
-  sequencePrefix?: string;  // filename prefix, e.g. "ezgif-frame-"
-  sequenceExt?: string;     // file extension, e.g. "jpg"
+  baseImage?: string; // path inside public/car-image(based)/
+  sequenceFolder?: string; // subfolder inside public/car-image(sequences)/
+  sequenceCount?: number; // total number of frames
+  sequencePrefix?: string; // filename prefix, e.g. "ezgif-frame-"
+  sequenceExt?: string; // file extension, e.g. "jpg"
 }
 
 export const cars: Car[] = [
-  {
-    id: "ferrari-sf90",
-    name: "SF90 Stradale",
-    brand: "Ferrari",
-    year: 2024,
-    power: "986 HP",
-    topSpeed: "340 km/h",
-    acceleration: "2.5s",
-    description:
-      "Ferrari's first series-production plug-in hybrid, combining a twin-turbo V8 with three electric motors.",
-    color: "#DC2626",
-    bgGradient: "from-red-50 to-white",
-    sequenceFolder: "SF90 Stradale sequence",
-  },
-  {
-    id: "bugatti-chiron",
-    name: "Chiron Super Sport",
-    brand: "Bugatti",
-    year: 2024,
-    power: "1,578 HP",
-    topSpeed: "440 km/h",
-    acceleration: "2.4s",
-    description:
-      "The ultimate expression of speed and luxury with a quad-turbo W16 engine.",
-    color: "#1E40AF",
-    bgGradient: "from-blue-50 to-white",
-  },
   {
     id: "porsche-911",
     name: "911 GT3 RS",
@@ -61,6 +34,34 @@ export const cars: Car[] = [
     sequenceCount: 99,
     sequencePrefix: "ezgif-frame-",
     sequenceExt: "jpg",
+  },
+  {
+    id: "bugatti-chiron",
+    name: "Chiron Super Sport",
+    brand: "Bugatti",
+    year: 2024,
+    power: "1,578 HP",
+    topSpeed: "440 km/h",
+    acceleration: "2.4s",
+    description:
+      "The ultimate expression of speed and luxury with a quad-turbo W16 engine.",
+    color: "#1E40AF",
+    bgGradient: "from-blue-50 to-white",
+    sequenceFolder: "Chiron Super Sport",
+  },
+  {
+    id: "ferrari-sf90",
+    name: "SF90 Stradale",
+    brand: "Ferrari",
+    year: 2024,
+    power: "986 HP",
+    topSpeed: "340 km/h",
+    acceleration: "2.5s",
+    description:
+      "Ferrari's first series-production plug-in hybrid, combining a twin-turbo V8 with three electric motors.",
+    color: "#DC2626",
+    bgGradient: "from-red-50 to-white",
+    sequenceFolder: "SF90 Stradale sequence",
   },
   {
     id: "lamborghini-revuelto",
