@@ -2,6 +2,14 @@
 
 A modern web application showcasing luxury car collections with interactive frame sequence animations, user authentication, and immersive parallax effects.
 
+## Upcoming Features
+
+- **Car Rental System** - Book and manage car rentals (in development)
+- **Payment Integration** - Secure payment processing (planned)
+- **Wishlist Management** - Save favorite cars (planned)
+- **Admin Dashboard** - Manage inventory and analytics (planned)
+- **Email Notifications** - Booking confirmations and updates (planned)
+
 ## Tech Stack
 
 - **Frontend:** Next.js 16.1.6, React, TypeScript, Tailwind CSS 4, Framer Motion
