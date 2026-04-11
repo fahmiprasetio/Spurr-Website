@@ -3,45 +3,67 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import CarCard from "@/components/CarCard";
+import type { Car } from "@/data/cars";
 
-import { cars } from "@/data/cars";
-import frames from "@/../public/frames.json";
+import { framesMap } from "@/data/frames";
 
-export default function CollectionSection() {
+type CollectionSectionProps = {
+  cars: Car[];
+};
+
+export default function CollectionSection({ cars }: CollectionSectionProps) {
   // Only show cars that have a valid sequenceFolder with images in frames.json
-  const sequenceFolders = Object.keys(frames);
+  const sequenceFolders = Object.keys(framesMap);
   const featured = cars.filter(
     (car) => car.sequenceFolder && sequenceFolders.includes(car.sequenceFolder)
   ).slice(0, 6);
 
   return (
-    <section id="collection" className="w-full py-32 flex flex-col items-center" style={{background: '#fafafa'}}>
-      <div className="w-full max-w-5xl px-6 lg:px-8">
+    <section
+      id="collection"
+      className="w-full py-32 flex flex-col items-center"
+      style={{
+        background: "#e8e8e8",
+        contentVisibility: "auto",
+        containIntrinsicSize: "1px 1200px",
+      }}
+    >
+      <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-20"
+          className="mb-20 flex flex-col items-center gap-6 md:gap-8"
         >
-          <p className="text-xs tracking-[0.4em] uppercase text-gray-400 mb-4">
+          <p className="text-xs tracking-[0.4em] uppercase text-gray-400 text-center">
             Curated Selection
           </p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-black">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-black text-center">
             The Collection
           </h2>
-          <div className="w-12 h-px bg-black/20 mx-auto mt-6 mb-6" />
-          <p className="text-gray-500 max-w-xl mx-auto text-sm leading-relaxed">
-            A meticulously curated assembly of the world&apos;s most exceptional automobiles — each representing the pinnacle of engineering, performance, and artistry.
+          <p
+            className="text-gray-500 text-sm md:text-base leading-relaxed"
+            style={{
+              maxWidth: "56rem",
+              marginInline: "auto",
+              textAlign: "center",
+            }}
+          >
+            A meticulously curated assembly of the world&apos;s most exceptional automobiles each representing the pinnacle of engineering, performance, and artistry.
           </p>
         </motion.div>
 
         {/* Car grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
-          {featured.map((car) => (
-            <CarCard key={car.id} car={car} />
-          ))}
+          {featured.map((car) => {
+            const sequenceFrames = car.sequenceFolder
+              ? framesMap[car.sequenceFolder] ?? []
+              : [];
+
+            return <CarCard key={car.id} car={car} sequenceFrames={sequenceFrames} />;
+          })}
         </div>
 
         {/* View All button */}

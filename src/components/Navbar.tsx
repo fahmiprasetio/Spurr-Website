@@ -1,6 +1,8 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SCROLL_THRESHOLD = 8;
@@ -35,14 +37,52 @@ function NavMenuItem({
   );
 }
 
+function NavActionButton({
+  label,
+  onClick,
+  disabled = false,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="group relative text-base tracking-[0.2em] uppercase text-white w-fit text-left disabled:opacity-50"
+    >
+      {label}
+      <span className="absolute left-0 -bottom-0.5 h-px w-0 bg-white transition-all duration-300 ease-out group-hover:w-full" />
+    </button>
+  );
+}
+
+type AuthUser = {
+  id: string;
+  name: string | null;
+  email: string;
+};
+
 export default function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const contentInset = isScrolled ? "clamp(16px, 2.6vw, 28px)" : "clamp(22px, 4vw, 52px)";
-  const navbarWidth = isScrolled ? "min(960px, calc(100vw - 2rem))" : "100vw";
-  const navbarOffsetY = isScrolled ? "12px" : "0px";
-  const navbarRadius = isScrolled ? "14px" : "0px";
-  const navbarBlur = isScrolled ? "blur(6px)" : "blur(10px)";
+  const [authLoading, setAuthLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const isHomeRoute = pathname === "/";
+  const isTopTransparent = isHomeRoute && !isScrolled;
+  const useLightForeground = isTopTransparent || isScrolled;
+  const contentInset = isScrolled
+    ? "clamp(1rem, 2.6vw, 1.75rem)"
+    : "clamp(1.375rem, 4vw, 3.25rem)";
+  const navbarWidth = isScrolled ? "min(50rem, calc(100vw - 2rem))" : "100vw";
+  const navbarOffsetY = isScrolled ? "0.75rem" : "0rem";
+  const navbarRadius = isScrolled ? "0.875rem" : "0rem";
+  const navbarBlur = isScrolled ? "blur(0.375rem)" : "blur(0.625rem)";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -54,6 +94,50 @@ export default function Navbar() {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadAuthState() {
+      try {
+        const response = await fetch("/api/auth/me", { cache: "no-store" });
+        const result = (await response.json().catch(() => ({}))) as {
+          user?: AuthUser | null;
+        };
+
+        if (isMounted) {
+          setCurrentUser(result.user ?? null);
+        }
+      } catch {
+        if (isMounted) {
+          setCurrentUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setAuthLoading(false);
+        }
+      }
+    }
+
+    loadAuthState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await fetch("/api/auth/sign-out", { method: "POST" });
+      setCurrentUser(null);
+      setIsOpen(false);
+      router.push("/");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
+  }
 
   return (
     <>
@@ -68,14 +152,26 @@ export default function Navbar() {
         >
           <nav
             style={{
-              background: isScrolled ? "rgba(0, 0, 0, 0.32)" : "rgba(232,232,232,0.90)",
-              boxShadow: isScrolled ? "0 12px 40px rgba(0,0,0,0.25)" : "0 1px 12px rgba(0,0,0,0.07)",
+              background: isTopTransparent
+                ? "transparent"
+                : isScrolled
+                  ? "rgba(0, 0, 0, 0.36)"
+                  : "rgba(232,232,232,0.90)",
+              boxShadow: isScrolled
+                ? "0 0 0.8rem rgba(255,255,255,0.16), 0 0.75rem 2rem rgba(0,0,0,0.28)"
+                : "none",
               paddingInline: contentInset,
               borderRadius: navbarRadius,
-              backdropFilter: navbarBlur,
-              WebkitBackdropFilter: navbarBlur,
-              border: isScrolled ? "1px solid rgba(255,255,255,0.15)" : "1px solid transparent",
-              borderBottom: isScrolled ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(0,0,0,0.10)",
+              backdropFilter: isTopTransparent ? "none" : navbarBlur,
+              WebkitBackdropFilter: isTopTransparent ? "none" : navbarBlur,
+              border: isScrolled
+                ? "0.0625rem solid rgba(255,255,255,0.58)"
+                : "0.0625rem solid transparent",
+              borderBottom: isTopTransparent
+                ? "0.0625rem solid rgba(255,255,255,0.72)"
+                : isScrolled
+                  ? "0.0625rem solid rgba(255,255,255,0.58)"
+                  : "0.0625rem solid rgba(0,0,0,0.10)",
               transition: [
                 `background 560ms ${NAVBAR_EASING}`,
                 `box-shadow 560ms ${NAVBAR_EASING}`,
@@ -91,7 +187,7 @@ export default function Navbar() {
               <Link href="/" className="flex items-center">
                 <span
                   className={`text-base font-bold tracking-[0.35em] uppercase select-none transition-colors duration-500 ${
-                    isScrolled ? "text-white" : "text-black"
+                    useLightForeground ? "text-white" : "text-black"
                   }`}
                 >
                   SPURR
@@ -103,9 +199,14 @@ export default function Navbar() {
                 <button
                   onClick={() => setIsOpen(false)}
                   className={`text-2xl p-2 ml-2 lg:ml-4 focus:outline-none transition-colors duration-500 ${
-                    isScrolled ? "text-white" : "text-black"
+                    useLightForeground ? "text-white" : "text-black"
                   }`}
-                  style={{ border: "none", background: "none", boxShadow: "none", outline: "none" }}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    boxShadow: "none",
+                    outline: "none",
+                  }}
                   aria-label="Close menu"
                 >
                   &times;
@@ -117,18 +218,18 @@ export default function Navbar() {
                   aria-label="Toggle menu"
                 >
                   <span
-                    className={`block w-5 h-[1.5px] transition-all duration-500 ${
-                      isScrolled ? "bg-white" : "bg-black"
+                    className={`block w-5 h-[0.09375rem] transition-all duration-500 ${
+                      useLightForeground ? "bg-white" : "bg-black"
                     }`}
                   />
                   <span
-                    className={`block w-5 h-[1.5px] transition-all duration-500 ${
-                      isScrolled ? "bg-white" : "bg-black"
+                    className={`block w-5 h-[0.09375rem] transition-all duration-500 ${
+                      useLightForeground ? "bg-white" : "bg-black"
                     }`}
                   />
                   <span
-                    className={`block w-5 h-[1.5px] transition-all duration-500 ${
-                      isScrolled ? "bg-white" : "bg-black"
+                    className={`block w-5 h-[0.09375rem] transition-all duration-500 ${
+                      useLightForeground ? "bg-white" : "bg-black"
                     }`}
                   />
                 </button>
@@ -139,49 +240,96 @@ export default function Navbar() {
       </div>
 
       {/* Dropdown menu and backdrop as siblings to avoid navbar stacking context issues */}
-      {isOpen ? (
-        <div
-          className="fixed left-0 right-0 z-50 flex justify-center"
-          style={{
-            top: isScrolled ? "76px" : "56px",
-            transition: `top 560ms ${NAVBAR_EASING}`,
-          }}
-        >
-          <div
-            className="bg-black/70 border border-white/10"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {isOpen ? (
+          <motion.div
+            className="fixed left-0 right-0 z-50 flex justify-center"
+            initial={{ opacity: 0, y: "-0.75rem" }}
+            animate={{ opacity: 1, y: "0rem" }}
+            exit={{ opacity: 0, y: "-0.5rem" }}
+            transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
             style={{
-              width: navbarWidth,
-              borderRadius: navbarRadius,
-              backdropFilter: isScrolled ? "blur(8px)" : "blur(12px)",
-              WebkitBackdropFilter: isScrolled ? "blur(8px)" : "blur(12px)",
-              transition: [
-                `width 560ms ${NAVBAR_EASING}`,
-                `border-radius 560ms ${NAVBAR_EASING}`,
-                `backdrop-filter 560ms ${NAVBAR_EASING}`,
-              ].join(", "),
+              top: isScrolled ? "4.75rem" : "3.5rem",
+              transition: `top 560ms ${NAVBAR_EASING}`,
             }}
           >
             <div
-              className="w-full flex flex-col gap-6"
+              className="bg-black/70"
+              onClick={(e) => e.stopPropagation()}
               style={{
-                paddingInline: contentInset,
-                transition: `padding-inline 560ms ${NAVBAR_EASING}`,
+                width: navbarWidth,
+                borderRadius: navbarRadius,
+                border: "0.0625rem solid rgba(255,255,255,0.10)",
+                backdropFilter: isScrolled ? "blur(0.5rem)" : "blur(0.75rem)",
+                WebkitBackdropFilter: isScrolled
+                  ? "blur(0.5rem)"
+                  : "blur(0.75rem)",
+                transition: [
+                  `width 560ms ${NAVBAR_EASING}`,
+                  `border-radius 560ms ${NAVBAR_EASING}`,
+                  `backdrop-filter 560ms ${NAVBAR_EASING}`,
+                ].join(", "),
               }}
             >
-              {menuItems.map((item, index) => (
-                <NavMenuItem
-                  key={item.href}
-                  label={item.label}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`${index === 0 ? "mt-4" : ""} ${index === menuItems.length - 1 ? "mb-4" : ""}`.trim()}
-                />
-              ))}
+              <div
+                className="w-full flex flex-col gap-6"
+                style={{
+                  paddingInline: contentInset,
+                  paddingBlock: "clamp(0.75rem, 1.8vh, 1rem)",
+                  transition: `padding-inline 560ms ${NAVBAR_EASING}`,
+                }}
+              >
+                {menuItems.map((item) => (
+                  <NavMenuItem
+                    key={item.href}
+                    label={item.label}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                  />
+                ))}
+
+                <div className="h-px bg-white/10" />
+
+                {authLoading ? (
+                  <p className="text-xs tracking-[0.16em] uppercase text-white/55">
+                    Loading account...
+                  </p>
+                ) : currentUser ? (
+                  <>
+                    <p className="text-xs tracking-[0.16em] uppercase text-white/55">
+                      Signed in: {(currentUser.name || currentUser.email).toUpperCase()}
+                    </p>
+                    <NavMenuItem
+                      label="Profile"
+                      href="/profile"
+                      onClick={() => setIsOpen(false)}
+                    />
+                    <NavActionButton
+                      label={signingOut ? "Signing Out..." : "Sign Out"}
+                      onClick={handleSignOut}
+                      disabled={signingOut}
+                    />
+                  </>
+                ) : (
+                  <div className="flex justify-center items-center gap-8 w-full">
+                    <NavMenuItem
+                      label="Sign In"
+                      href="/sign-in"
+                      onClick={() => setIsOpen(false)}
+                    />
+                    <div className="w-px h-6 bg-white/20" />
+                    <NavMenuItem
+                      label="Sign Up"
+                      href="/sign-up"
+                      onClick={() => setIsOpen(false)}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </>
   );
 }

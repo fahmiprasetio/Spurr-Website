@@ -1,0 +1,23 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  deleteSessionByToken,
+  getExpiredCookieOptions,
+  SESSION_COOKIE_NAME,
+} from "@/lib/auth";
+
+export async function POST(request: NextRequest) {
+  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+
+  if (token) {
+    await deleteSessionByToken(token);
+  }
+
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(
+    SESSION_COOKIE_NAME,
+    "",
+    getExpiredCookieOptions()
+  );
+
+  return response;
+}

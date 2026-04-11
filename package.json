@@ -3,12 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node ./node_modules/next/dist/bin/next dev",
+    "dev": "node ./node_modules/next/dist/bin/next dev --webpack",
+    "dev:turbo": "node ./node_modules/next/dist/bin/next dev --turbopack",
     "build": "node ./node_modules/next/dist/bin/next build",
     "start": "node ./node_modules/next/dist/bin/next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "node ./node_modules/prisma/build/index.js generate",
+    "db:push": "node ./node_modules/prisma/build/index.js db push",
+    "db:seed": "node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts",
+    "db:studio": "node ./node_modules/prisma/build/index.js studio"
   },
   "dependencies": {
+    "@prisma/client": "6.9.0",
     "framer-motion": "^11.15.0",
     "next": "16.1.6",
     "react": "19.2.3",
@@ -21,7 +27,12 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "prisma": "6.9.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

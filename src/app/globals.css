@@ -1,7 +1,20 @@
+
 @import "tailwindcss";
+/* Navbar responsive padding dengan rem, bukan px/vh/vw */
+.navbar-rem-padding {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .navbar-rem-padding {
+    padding-left: 5rem;
+    padding-right: 5rem;
+  }
+}
 
 :root {
-  --background: #ffffff;
+  --background: #e8e8e8;
   --foreground: #0a0a0a;
   --accent: #1a1a1a;
   --muted: #6b7280;
@@ -18,14 +31,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
-* {
-  margin: 0;
-  padding: 0;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
+html,
 body {
-  background: #fafafa;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #e8e8e8;
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;

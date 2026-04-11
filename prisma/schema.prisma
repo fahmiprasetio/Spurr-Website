@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CarStatus {
+  AVAILABLE
+  BOOKED
+  MAINTENANCE
+  INACTIVE
+}
+
+model Brand {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  country   String?
+  founded   Int?
+  logo      String?
+  cars      Car[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Car {
+  id             String    @id
+  name           String
+  year           Int
+  power          String
+  topSpeed       String
+  acceleration   String
+  description    String
+  color          String
+  bgGradient     String
+  baseImage      String?
+  sequenceFolder String?
+  sequenceCount  Int?
+  sequencePrefix String?
+  sequenceExt    String?
+  status         CarStatus @default(AVAILABLE)
+  brandId        Int
+  brand          Brand     @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([brandId])
+  @@index([status])
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String?
+  email        String    @unique
+  passwordHash String
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}

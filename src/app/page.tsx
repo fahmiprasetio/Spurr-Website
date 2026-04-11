@@ -1,14 +1,9 @@
-import Hero from "@/components/Hero";
-import CollectionSection from "@/components/CollectionSection";
-import BrandsSection from "@/components/BrandsSection";
+import HomeParallax from "@/components/HomeParallax";
+import { getCarsFromDb } from "@/lib/cars-db";
 
-export default function Home() {
-  return (
-    <>
-      <Hero />
-      <CollectionSection />
-      <BrandsSection />
-    </>
-  );
+export default async function Home() {
+  const cars = await getCarsFromDb();
+
+  return <HomeParallax cars={cars} />;
 }
 
