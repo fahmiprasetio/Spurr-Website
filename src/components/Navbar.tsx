@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const SCROLL_THRESHOLD = 8;
+const NAVBAR_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 const menuItems = [
   { label: "Collection", href: "#collection" },
@@ -37,6 +38,11 @@ function NavMenuItem({
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const contentInset = isScrolled ? "clamp(16px, 2.6vw, 28px)" : "clamp(22px, 4vw, 52px)";
+  const navbarWidth = isScrolled ? "min(960px, calc(100vw - 2rem))" : "100vw";
+  const navbarOffsetY = isScrolled ? "12px" : "0px";
+  const navbarRadius = isScrolled ? "14px" : "0px";
+  const navbarBlur = isScrolled ? "blur(6px)" : "blur(10px)";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,32 +57,40 @@ export default function Navbar() {
 
   return (
     <>
-      <div
-        className={`fixed left-0 right-0 z-60 transition-all duration-300 ${
-          isScrolled ? "top-3 px-4 flex justify-center" : "top-0"
-        }`}
-      >
-        <div className={isScrolled ? "w-full max-w-3xl" : "w-full"}>
+      <div className="fixed left-0 right-0 top-0 z-60 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto"
+          style={{
+            width: navbarWidth,
+            transform: `translateY(${navbarOffsetY})`,
+            transition: `width 560ms ${NAVBAR_EASING}, transform 560ms ${NAVBAR_EASING}`,
+          }}
+        >
           <nav
-            className={`transition-all duration-300 ${
-              isScrolled
-                ? "backdrop-blur-sm rounded-xl border border-white/15 shadow-xl"
-                : "backdrop-blur-md border-b border-black/10"
-            }`}
             style={{
               background: isScrolled ? "rgba(0, 0, 0, 0.32)" : "rgba(232,232,232,0.90)",
               boxShadow: isScrolled ? "0 12px 40px rgba(0,0,0,0.25)" : "0 1px 12px rgba(0,0,0,0.07)",
+              paddingInline: contentInset,
+              borderRadius: navbarRadius,
+              backdropFilter: navbarBlur,
+              WebkitBackdropFilter: navbarBlur,
+              border: isScrolled ? "1px solid rgba(255,255,255,0.15)" : "1px solid transparent",
+              borderBottom: isScrolled ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(0,0,0,0.10)",
+              transition: [
+                `background 560ms ${NAVBAR_EASING}`,
+                `box-shadow 560ms ${NAVBAR_EASING}`,
+                `padding-inline 560ms ${NAVBAR_EASING}`,
+                `border-radius 560ms ${NAVBAR_EASING}`,
+                `backdrop-filter 560ms ${NAVBAR_EASING}`,
+                `border-color 560ms ${NAVBAR_EASING}`,
+              ].join(", "),
             }}
           >
-            <div
-              className={`flex items-center justify-between h-14 ${
-                isScrolled ? "px-6 lg:px-8" : "px-8 lg:px-12"
-              }`}
-            >
+            <div className="flex items-center justify-between h-14">
               {/* Logo */}
               <Link href="/" className="flex items-center">
                 <span
-                  className={`text-base font-bold tracking-[0.35em] uppercase select-none transition-colors duration-300 ${
+                  className={`text-base font-bold tracking-[0.35em] uppercase select-none transition-colors duration-500 ${
                     isScrolled ? "text-white" : "text-black"
                   }`}
                 >
@@ -88,7 +102,7 @@ export default function Navbar() {
               {isOpen ? (
                 <button
                   onClick={() => setIsOpen(false)}
-                  className={`text-2xl p-2 ml-2 lg:ml-4 focus:outline-none transition-colors duration-300 ${
+                  className={`text-2xl p-2 ml-2 lg:ml-4 focus:outline-none transition-colors duration-500 ${
                     isScrolled ? "text-white" : "text-black"
                   }`}
                   style={{ border: "none", background: "none", boxShadow: "none", outline: "none" }}
@@ -103,17 +117,17 @@ export default function Navbar() {
                   aria-label="Toggle menu"
                 >
                   <span
-                    className={`block w-5 h-[1.5px] transition-all duration-300 ${
+                    className={`block w-5 h-[1.5px] transition-all duration-500 ${
                       isScrolled ? "bg-white" : "bg-black"
                     }`}
                   />
                   <span
-                    className={`block w-5 h-[1.5px] transition-all duration-300 ${
+                    className={`block w-5 h-[1.5px] transition-all duration-500 ${
                       isScrolled ? "bg-white" : "bg-black"
                     }`}
                   />
                   <span
-                    className={`block w-5 h-[1.5px] transition-all duration-300 ${
+                    className={`block w-5 h-[1.5px] transition-all duration-500 ${
                       isScrolled ? "bg-white" : "bg-black"
                     }`}
                   />
@@ -127,17 +141,34 @@ export default function Navbar() {
       {/* Dropdown menu and backdrop as siblings to avoid navbar stacking context issues */}
       {isOpen ? (
         <div
-          className={`fixed left-0 right-0 z-50 flex justify-center px-4 transition-all duration-300 ${
-            isScrolled ? "top-19" : "top-14"
-          }`}
+          className="fixed left-0 right-0 z-50 flex justify-center"
+          style={{
+            top: isScrolled ? "76px" : "56px",
+            transition: `top 560ms ${NAVBAR_EASING}`,
+          }}
         >
           <div
-            className={`w-full bg-black/70 border border-white/10 ${
-              isScrolled ? "backdrop-blur-md max-w-3xl rounded-xl" : "backdrop-blur-lg"
-            }`}
+            className="bg-black/70 border border-white/10"
             onClick={(e) => e.stopPropagation()}
+            style={{
+              width: navbarWidth,
+              borderRadius: navbarRadius,
+              backdropFilter: isScrolled ? "blur(8px)" : "blur(12px)",
+              WebkitBackdropFilter: isScrolled ? "blur(8px)" : "blur(12px)",
+              transition: [
+                `width 560ms ${NAVBAR_EASING}`,
+                `border-radius 560ms ${NAVBAR_EASING}`,
+                `backdrop-filter 560ms ${NAVBAR_EASING}`,
+              ].join(", "),
+            }}
           >
-            <div className={`w-full flex flex-col gap-6 ${isScrolled ? "px-6 lg:px-8" : "px-8 lg:px-12"}`}>
+            <div
+              className="w-full flex flex-col gap-6"
+              style={{
+                paddingInline: contentInset,
+                transition: `padding-inline 560ms ${NAVBAR_EASING}`,
+              }}
+            >
               {menuItems.map((item, index) => (
                 <NavMenuItem
                   key={item.href}
