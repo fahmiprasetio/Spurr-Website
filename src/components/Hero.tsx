@@ -1,55 +1,26 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-const HERO_VIDEO_SRC = "/car-video/hero-section-video.mp4";
+const HERO_VIDEO_SRC = "/car-video/hero-section-video-compresed.mp4";
 
 type HeroProps = {
   isVideoActive?: boolean;
+  onVideoReady?: () => void;
 };
 
-export default function Hero({ isVideoActive = true }: HeroProps) {
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [showSplash, setShowSplash] = useState(true);
+export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const playbackConfirmedRef = useRef(false);
+  const hasNotifiedReadyRef = useRef(false);
 
-  useEffect(() => {
-    if (!showSplash) return;
-
-    const interval = setInterval(() => {
-      setLoadingProgress((prev) => {
-        const cap = isVideoPlaying ? 100 : 92;
-        if (prev >= cap) return prev;
-        const step = isVideoPlaying ? 4 : 1;
-        return Math.min(cap, prev + step);
-      });
-    }, 24);
-
-    return () => clearInterval(interval);
-  }, [isVideoPlaying, showSplash]);
-
-  useEffect(() => {
-    if (!showSplash || !isVideoPlaying || loadingProgress < 100) return;
-
-    const timeout = setTimeout(() => {
-      setShowSplash(false);
-    }, 240);
-
-    return () => clearTimeout(timeout);
-  }, [isVideoPlaying, loadingProgress, showSplash]);
-
-  function handleVideoPlaying() {
-    if (playbackConfirmedRef.current) return;
-    playbackConfirmedRef.current = true;
-    setIsVideoPlaying(true);
+  function notifyVideoReady() {
+    if (hasNotifiedReadyRef.current) return;
+    hasNotifiedReadyRef.current = true;
+    onVideoReady?.();
   }
 
   useEffect(() => {
-    if (showSplash) return;
-
     const video = videoRef.current;
     if (!video) return;
 
@@ -62,39 +33,10 @@ export default function Hero({ isVideoActive = true }: HeroProps) {
     }
 
     video.pause();
-  }, [isVideoActive, showSplash]);
+  }, [isVideoActive]);
 
   return (
-    <>
-      <AnimatePresence>
-        {showSplash ? (
-          <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed inset-0 z-120 flex items-center justify-center bg-black"
-          >
-            <div className="w-[min(28rem,84vw)]">
-              <p className="text-center text-[11px] tracking-[0.32em] uppercase text-white/75">
-                Loading SPURR Experience
-              </p>
-              <div className="mt-5 h-1 w-full overflow-hidden bg-white/20">
-                <motion.div
-                  className="h-full bg-white"
-                  animate={{ width: `${loadingProgress}%` }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                />
-              </div>
-              <p className="mt-3 text-right text-sm tracking-wider text-white/85">
-                {loadingProgress}%
-              </p>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
         <video
           ref={videoRef}
           className="absolute inset-0 h-full w-full object-cover"
@@ -104,7 +46,9 @@ export default function Hero({ isVideoActive = true }: HeroProps) {
           muted
           playsInline
           preload="metadata"
-          onPlaying={handleVideoPlaying}
+          onLoadedData={notifyVideoReady}
+          onCanPlay={notifyVideoReady}
+          onPlaying={notifyVideoReady}
         />
         <div className="absolute inset-0 bg-black/52" />
 
@@ -182,7 +126,6 @@ export default function Hero({ isVideoActive = true }: HeroProps) {
           Scroll
         </span>
       </motion.div>
-      </section>
-    </>
+    </section>
   );
 }
