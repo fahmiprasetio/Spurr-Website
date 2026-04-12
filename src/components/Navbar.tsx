@@ -80,7 +80,6 @@ export default function Navbar() {
   const navbarBlur = isScrolled ? "blur(0.375rem)" : "blur(0.625rem)";
   const menuItems = [
     { label: "Collection", href: isHomeRoute ? "#collection" : "/#collection" },
-    { label: "Brands", href: isHomeRoute ? "#brands" : "/#brands" },
     { label: "About", href: "/about" },
   ];
 
