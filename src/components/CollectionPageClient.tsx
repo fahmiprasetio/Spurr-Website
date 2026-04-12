@@ -11,6 +11,13 @@ type CollectionPageClientProps = {
 };
 
 export default function CollectionPageClient({ cars }: CollectionPageClientProps) {
+  const hoverReadyCars = cars.filter((car) => {
+    if (!car.sequenceFolder) return false;
+
+    const frames = framesMap[car.sequenceFolder];
+    return Array.isArray(frames) && frames.length > 1;
+  });
+
   return (
     <main className="min-h-screen bg-white">
       {/* Header */}
@@ -18,7 +25,7 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
         className="w-full py-32 flex flex-col items-center border-b border-black/5"
         style={{ background: "#fafafa" }}
       >
-        <div className="w-full max-w-5xl px-6 lg:px-8 text-center">
+        <div className="w-full max-w-7xl px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -42,7 +49,7 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
               Every vehicle in our curated catalogue — from the measured refinement of grand tourers to the unbridled ferocity of hypercars. Each one a masterwork in its own right.
             </p>
             <p className="text-xs tracking-[0.3em] uppercase text-gray-400 mt-6">
-              {cars.length} Exceptional Vehicles
+              {hoverReadyCars.length} Interactive Vehicles
             </p>
           </motion.div>
         </div>
@@ -50,9 +57,9 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
 
       {/* Grid */}
       <section className="w-full py-20 flex flex-col items-center" style={{ background: "#fafafa" }}>
-        <div className="w-full max-w-5xl px-6 lg:px-8">
+        <div className="w-full max-w-7xl px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
-            {cars.map((car, index) => (
+            {hoverReadyCars.map((car, index) => (
               <motion.div
                 key={car.id}
                 initial={{ opacity: 0, y: 30 }}
@@ -63,6 +70,7 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
                 <CarCard
                   car={car}
                   sequenceFrames={car.sequenceFolder ? framesMap[car.sequenceFolder] ?? [] : []}
+                  href={`/collection/${car.id}`}
                 />
               </motion.div>
             ))}

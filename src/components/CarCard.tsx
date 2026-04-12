@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type KeyboardEvent } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import type { Car } from "@/data/cars";
 
 type CarCardProps = {
   car: Car;
   sequenceFrames?: string[];
+  href?: string;
 };
 
-export default function CarCard({ car, sequenceFrames = [] }: CarCardProps) {
+export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps) {
+  const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -50,6 +53,11 @@ export default function CarCard({ car, sequenceFrames = [] }: CarCardProps) {
       observer.disconnect();
     };
   }, [isInView]);
+
+  useEffect(() => {
+    if (!href || !isInView) return;
+    router.prefetch(href);
+  }, [href, isInView, router]);
 
   const getFrameUrl = useCallback(
     (index: number) => {
@@ -206,7 +214,22 @@ export default function CarCard({ car, sequenceFrames = [] }: CarCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="group cursor-pointer w-full"
+      className={`group w-full ${href ? "cursor-pointer" : ""}`}
+      role={href ? "link" : undefined}
+      tabIndex={href ? 0 : undefined}
+      onClick={() => {
+        if (href) {
+          router.push(href);
+        }
+      }}
+      onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+        if (!href) return;
+
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          router.push(href);
+        }
+      }}
       onMouseEnter={() => {
         if (frames.length > 0 && currentFrameRef.current < 0) {
           setFrameOnImage(0);

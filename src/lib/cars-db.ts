@@ -3,7 +3,9 @@ import type { Car } from "@/data/cars";
 import { cars as fallbackCars } from "@/data/cars";
 
 const DB_RETRY_DELAY_MS = 60_000;
+const CARS_CACHE_TTL_MS = 15_000;
 let skipDbUntil = 0;
+let carsCache: { data: Car[]; expiresAt: number } | null = null;
 
 function getSafeErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -18,7 +20,15 @@ function getSafeErrorMessage(error: unknown): string {
 }
 
 export async function getCarsFromDb(): Promise<Car[]> {
+  if (carsCache && Date.now() < carsCache.expiresAt) {
+    return carsCache.data;
+  }
+
   if (Date.now() < skipDbUntil) {
+    carsCache = {
+      data: fallbackCars,
+      expiresAt: Date.now() + CARS_CACHE_TTL_MS,
+    };
     return fallbackCars;
   }
 
@@ -29,10 +39,14 @@ export async function getCarsFromDb(): Promise<Car[]> {
     });
 
     if (rows.length === 0) {
+      carsCache = {
+        data: fallbackCars,
+        expiresAt: Date.now() + CARS_CACHE_TTL_MS,
+      };
       return fallbackCars;
     }
 
-    return rows.map((row) => ({
+    const mappedCars = rows.map((row) => ({
       id: row.id,
       name: row.name,
       brand: row.brand.name,
@@ -49,6 +63,13 @@ export async function getCarsFromDb(): Promise<Car[]> {
       sequencePrefix: row.sequencePrefix ?? undefined,
       sequenceExt: row.sequenceExt ?? undefined,
     }));
+
+    carsCache = {
+      data: mappedCars,
+      expiresAt: Date.now() + CARS_CACHE_TTL_MS,
+    };
+
+    return mappedCars;
   } catch (error) {
     const errorMessage = getSafeErrorMessage(error);
     const isConnectionIssue = /Can't reach database server|ECONNREFUSED|ETIMEDOUT|ENOTFOUND/i.test(
@@ -62,12 +83,20 @@ export async function getCarsFromDb(): Promise<Car[]> {
           DB_RETRY_DELAY_MS / 1000
         } detik. Detail: ${errorMessage}`
       );
+      carsCache = {
+        data: fallbackCars,
+        expiresAt: Date.now() + CARS_CACHE_TTL_MS,
+      };
       return fallbackCars;
     }
 
     console.warn(
       `[cars-db] Gagal membaca data mobil dari DB. Menggunakan fallback lokal. Detail: ${errorMessage}`
     );
+    carsCache = {
+      data: fallbackCars,
+      expiresAt: Date.now() + CARS_CACHE_TTL_MS,
+    };
     return fallbackCars;
   }
 }

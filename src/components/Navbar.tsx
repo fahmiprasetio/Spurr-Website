@@ -8,12 +8,6 @@ import { useEffect, useState } from "react";
 const SCROLL_THRESHOLD = 8;
 const NAVBAR_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-const menuItems = [
-  { label: "Collection", href: "#collection" },
-  { label: "Brands", href: "#brands" },
-  { label: "About", href: "#about" },
-];
-
 function NavMenuItem({
   label,
   href,
@@ -84,6 +78,11 @@ export default function Navbar() {
   const navbarOffsetY = isScrolled ? "0.75rem" : "0rem";
   const navbarRadius = isScrolled ? "0.875rem" : "0rem";
   const navbarBlur = isScrolled ? "blur(0.375rem)" : "blur(0.625rem)";
+  const menuItems = [
+    { label: "Collection", href: isHomeRoute ? "#collection" : "/#collection" },
+    { label: "Brands", href: isHomeRoute ? "#brands" : "/#brands" },
+    { label: "About", href: "/about" },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {

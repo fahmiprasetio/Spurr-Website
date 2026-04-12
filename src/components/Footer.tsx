@@ -42,16 +42,22 @@ export default function Footer() {
                 Home
               </Link>
               <Link
-                href="#collection"
+                href="/#collection"
                 className="text-sm text-gray-300 hover:text-white transition-colors"
               >
                 Collection
               </Link>
               <Link
-                href="#brands"
+                href="/#brands"
                 className="text-sm text-gray-300 hover:text-white transition-colors"
               >
                 Brands
+              </Link>
+              <Link
+                href="/about"
+                className="text-sm text-gray-300 hover:text-white transition-colors"
+              >
+                About
               </Link>
             </div>
           </div>

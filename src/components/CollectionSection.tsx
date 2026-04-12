@@ -11,12 +11,31 @@ type CollectionSectionProps = {
   cars: Car[];
 };
 
+const HOMEPAGE_FEATURED_IDS = [
+  "porsche-911",
+  "bugatti-chiron",
+  "pagani-huayra",
+  "koenigsegg-jesko",
+];
+
 export default function CollectionSection({ cars }: CollectionSectionProps) {
-  // Only show cars that have a valid sequenceFolder with images in frames.json
-  const sequenceFolders = Object.keys(framesMap);
-  const featured = cars.filter(
-    (car) => car.sequenceFolder && sequenceFolders.includes(car.sequenceFolder)
-  ).slice(0, 6);
+  const hoverReadyCars = cars.filter((car) => {
+    if (!car.sequenceFolder) return false;
+
+    const frames = framesMap[car.sequenceFolder];
+    return Array.isArray(frames) && frames.length > 1;
+  });
+
+  const featuredFromPreset = HOMEPAGE_FEATURED_IDS
+    .map((carId) => hoverReadyCars.find((car) => car.id === carId))
+    .filter((car): car is Car => Boolean(car));
+
+  const fallbackFeatured = hoverReadyCars.filter(
+    (car) => !HOMEPAGE_FEATURED_IDS.includes(car.id)
+  );
+
+  const featured = [...featuredFromPreset, ...fallbackFeatured].slice(0, 4);
+  const remainingCount = Math.max(hoverReadyCars.length - featured.length, 0);
 
   return (
     <section
@@ -62,7 +81,14 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
               ? framesMap[car.sequenceFolder] ?? []
               : [];
 
-            return <CarCard key={car.id} car={car} sequenceFrames={sequenceFrames} />;
+            return (
+              <CarCard
+                key={car.id}
+                car={car}
+                sequenceFrames={sequenceFrames}
+                href={`/collection/${car.id}`}
+              />
+            );
           })}
         </div>
 
@@ -75,7 +101,7 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
           className="flex flex-col items-center mt-16 gap-4"
         >
           <p className="text-xs tracking-[0.3em] uppercase text-gray-400">
-            {cars.length - 6} more vehicles await
+            {remainingCount} more vehicles await
           </p>
           <Link
             href="/collection"
