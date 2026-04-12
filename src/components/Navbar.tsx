@@ -63,6 +63,7 @@ type AuthUser = {
   id: string;
   name: string | null;
   email: string;
+  role: "USER" | "ADMIN";
 };
 
 export default function Navbar() {
@@ -300,10 +301,32 @@ export default function Navbar() {
                       Signed in: {(currentUser.name || currentUser.email).toUpperCase()}
                     </p>
                     <NavMenuItem
+                      label="Wishlist"
+                      href="/wishlist"
+                      onClick={() => setIsOpen(false)}
+                    />
+                    <NavMenuItem
+                      label="Rentals"
+                      href="/rentals"
+                      onClick={() => setIsOpen(false)}
+                    />
+                    <NavMenuItem
+                      label="Notifications"
+                      href="/notifications"
+                      onClick={() => setIsOpen(false)}
+                    />
+                    <NavMenuItem
                       label="Profile"
                       href="/profile"
                       onClick={() => setIsOpen(false)}
                     />
+                    {currentUser.role === "ADMIN" ? (
+                      <NavMenuItem
+                        label="Admin"
+                        href="/admin"
+                        onClick={() => setIsOpen(false)}
+                      />
+                    ) : null}
                     <NavActionButton
                       label={signingOut ? "Signing Out..." : "Sign Out"}
                       onClick={handleSignOut}

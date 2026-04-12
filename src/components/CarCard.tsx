@@ -23,30 +23,36 @@ export default function CarCard({ car, sequenceFrames = [] }: CarCardProps) {
   // Animation logic: keep per-frame speed consistent across cars.
   // This lets each sequence finish naturally based on its own frame count.
   const FORWARD_FPS = 24;
+  const REVERSE_FPS = 20;
 
   useEffect(() => {
-    if (frames.length === 0) return;
+    if (frames.length <= 1) return;
 
     if (intervalRef.current) clearInterval(intervalRef.current);
 
-    if (!isHovered) {
-      setCurrentFrame(0);
-      return;
-    }
+    const targetFrame = isHovered ? frames.length - 1 : 0;
+    const step = isHovered ? 1 : -1;
+    const frameInterval = Math.max(
+      16,
+      Math.floor(1000 / (isHovered ? FORWARD_FPS : REVERSE_FPS))
+    );
 
-    const forwardInterval = Math.max(16, Math.floor(1000 / FORWARD_FPS));
-
-    // Play once from frame 1 (index 0) until the last frame.
-    setCurrentFrame(0);
     intervalRef.current = setInterval(() => {
       setCurrentFrame((prev) => {
-        if (prev >= frames.length - 1) {
+        if (prev === targetFrame) {
           clearInterval(intervalRef.current!);
           return prev;
         }
-        return prev + 1;
+
+        const next = prev + step;
+        if (next < 0 || next > frames.length - 1) {
+          clearInterval(intervalRef.current!);
+          return prev;
+        }
+
+        return next;
       });
-    }, forwardInterval);
+    }, frameInterval);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -81,7 +87,12 @@ export default function CarCard({ car, sequenceFrames = [] }: CarCardProps) {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="group cursor-pointer w-full"
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        if (frames.length > 1) {
+          setCurrentFrame(frames.length - 1);
+        }
+      }}
     >
       <div className="relative overflow-hidden border border-gray-200 hover:border-gray-400 hover:shadow-xl shadow-sm transition-all duration-500" style={{borderRadius: '2px', background: '#e8e8e8'}}>
         {/* Brand tag */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 const HERO_VIDEO_SRC = "/car-video/hero-section-video-compresed.mp4";
 

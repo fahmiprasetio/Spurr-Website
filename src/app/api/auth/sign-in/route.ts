@@ -7,6 +7,7 @@ import {
   SESSION_COOKIE_NAME,
   verifyPassword,
 } from "@/lib/auth";
+import { hasAdminAccess } from "@/lib/auth-server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +34,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isAdmin = await hasAdminAccess(user.id, user.role);
+
     const { token, expiresAt } = await createSession(user.id);
 
     const response = NextResponse.json({
@@ -41,6 +44,7 @@ export async function POST(request: NextRequest) {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: isAdmin ? "ADMIN" : user.role,
       },
     });
 

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   deleteSessionByToken,
@@ -52,6 +53,43 @@ export default async function ProfilePage() {
                 dateStyle: "long",
               }).format(user.createdAt)}
             </p>
+          </div>
+
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Role</p>
+            <p className="text-base text-black mt-1">{user.role}</p>
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-black/10 pt-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Feature Access</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="/wishlist"
+              className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
+            >
+              Wishlist
+            </Link>
+            <Link
+              href="/rentals"
+              className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
+            >
+              Rentals
+            </Link>
+            <Link
+              href="/notifications"
+              className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
+            >
+              Notifications
+            </Link>
+            {user.role === "ADMIN" ? (
+              <Link
+                href="/admin"
+                className="border border-black px-4 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
+              >
+                Admin Dashboard
+              </Link>
+            ) : null}
           </div>
         </div>
 

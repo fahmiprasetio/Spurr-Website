@@ -4,6 +4,7 @@ import {
   getUserBySessionToken,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth";
+import { hasAdminAccess } from "@/lib/auth-server";
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -24,11 +25,14 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
+  const isAdmin = await hasAdminAccess(user.id, user.role);
+
   return NextResponse.json({
     user: {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: isAdmin ? "ADMIN" : user.role,
     },
   });
 }

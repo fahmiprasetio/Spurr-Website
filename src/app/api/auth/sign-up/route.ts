@@ -42,11 +42,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const userCount = await prisma.user.count();
+
     const user = await prisma.user.create({
       data: {
         name: name || null,
         email,
         passwordHash: hashPassword(password),
+        role: userCount === 0 ? "ADMIN" : "USER",
       },
     });
 
@@ -58,6 +61,7 @@ export async function POST(request: NextRequest) {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
 

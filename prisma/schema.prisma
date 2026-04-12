@@ -14,6 +14,46 @@ enum CarStatus {
   INACTIVE
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum RentalStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  E_WALLET
+  CREDIT_CARD
+  VIRTUAL_ACCOUNT
+}
+
+enum NotificationType {
+  RENTAL_CREATED
+  PAYMENT_RECEIVED
+  RENTAL_STATUS_CHANGED
+  GENERAL_UPDATE
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
 model Brand {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -43,6 +83,8 @@ model Car {
   status         CarStatus @default(AVAILABLE)
   brandId        Int
   brand          Brand     @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  rentals        Rental[]
+  wishlistItems  WishlistItem[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -55,7 +97,12 @@ model User {
   name         String?
   email        String    @unique
   passwordHash String
+  role         UserRole  @default(USER)
   sessions     Session[]
+  rentals      Rental[]
+  payments     Payment[]
+  wishlistItems WishlistItem[]
+  notifications EmailNotification[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -70,4 +117,73 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  carId     String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, carId])
+  @@index([userId])
+  @@index([carId])
+}
+
+model Rental {
+  id         String       @id @default(cuid())
+  userId     String
+  carId      String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car        Car          @relation(fields: [carId], references: [id], onDelete: Restrict)
+  startDate  DateTime
+  endDate    DateTime
+  totalDays  Int
+  totalAmount Int
+  status     RentalStatus @default(PENDING)
+  notes      String?
+  payment    Payment?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([carId])
+  @@index([status])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  rentalId       String        @unique
+  userId         String
+  rental         Rental        @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount         Int
+  method         PaymentMethod @default(BANK_TRANSFER)
+  status         PaymentStatus @default(PENDING)
+  transactionRef String        @unique
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model EmailNotification {
+  id        String             @id @default(cuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  subject   String
+  message   String
+  status    NotificationStatus @default(QUEUED)
+  sentAt    DateTime?
+  metadata  Json?
+  createdAt DateTime           @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
 }
