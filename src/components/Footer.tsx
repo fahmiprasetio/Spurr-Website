@@ -55,10 +55,41 @@ export default function Footer() {
               </Link>
             </div>
           </div>
+
+          {/* Socials */}
+          <div className="text-center md:text-left mt-10 md:mt-0">
+            <h3 className="text-xs tracking-[0.2em] uppercase text-gray-400 mb-6">Social</h3>
+            <div className="flex flex-col md:items-start items-center gap-2">
+              <a
+                href="mailto:spurr@example.com"
+                className="text-sm text-gray-300 hover:text-white transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Email
+              </a>
+              <a
+                href="https://instagram.com/spurr.id"
+                className="text-sm text-gray-300 hover:text-white transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Instagram
+              </a>
+              <a
+                href="https://facebook.com/spurr.id"
+                className="text-sm text-gray-300 hover:text-white transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Facebook
+              </a>
+            </div>
+          </div>
         </div>
 
         <div
-          className="flex flex-col items-center mt-10 pt-6 border-t border-gray-800"
+          className="flex flex-col items-center mt-20 pt-6 border-t border-gray-800"
         >
           <p className="text-xs text-gray-500 tracking-wider mb-1">
             &copy; {new Date().getFullYear()} SPURR. All rights reserved.
