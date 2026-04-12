@@ -15,11 +15,19 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [isSequenceReady, setIsSequenceReady] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const imageRef = useRef<HTMLImageElement | null>(null);
+  const frontImageRef = useRef<HTMLImageElement | null>(null);
+  const backImageRef = useRef<HTMLImageElement | null>(null);
   const currentFrameRef = useRef(-1);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sequenceWarmedRef = useRef(false);
+  const routePrefetchedRef = useRef(false);
+  const isFrontVisibleRef = useRef(true);
+  const requestedFrameRef = useRef(0);
+  const sequenceReadyRef = useRef(false);
+  const sequenceWarmupPromiseRef = useRef<Promise<void> | null>(null);
+  const swapTokenRef = useRef(0);
   const loadedSrcRef = useRef<Set<string>>(new Set());
   const loadingSrcRef = useRef<Set<string>>(new Set());
   const frames = sequenceFrames;
@@ -44,7 +52,7 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
           observer.disconnect();
         }
       },
-      { rootMargin: "240px 0px" }
+      { rootMargin: "120px 0px" }
     );
 
     observer.observe(node);
@@ -54,10 +62,11 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
     };
   }, [isInView]);
 
-  useEffect(() => {
-    if (!href || !isInView) return;
+  const prefetchRoute = useCallback(() => {
+    if (!href || routePrefetchedRef.current) return;
+    routePrefetchedRef.current = true;
     router.prefetch(href);
-  }, [href, isInView, router]);
+  }, [href, router]);
 
   const getFrameUrl = useCallback(
     (index: number) => {
@@ -67,23 +76,149 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
     [frames, sequenceFolderPath]
   );
 
+  const swapVisibleFrame = useCallback((nextSrc: string, safeIndex: number) => {
+    const front = frontImageRef.current;
+    const back = backImageRef.current;
+    if (!front || !back) return;
+
+    const visible = isFrontVisibleRef.current ? front : back;
+    const hidden = isFrontVisibleRef.current ? back : front;
+    const token = ++swapTokenRef.current;
+
+    const commitSwap = () => {
+      if (swapTokenRef.current !== token) return;
+      if (requestedFrameRef.current !== safeIndex) return;
+
+      hidden.style.opacity = "1";
+      visible.style.opacity = "0";
+      isFrontVisibleRef.current = !isFrontVisibleRef.current;
+      currentFrameRef.current = safeIndex;
+      hidden.onload = null;
+      hidden.onerror = null;
+    };
+
+    const decodeThenCommit = () => {
+      const finalize = () => {
+        commitSwap();
+      };
+
+      const decode = hidden.decode;
+      if (typeof decode === "function") {
+        decode.call(hidden).then(finalize).catch(finalize);
+        return;
+      }
+
+      finalize();
+    };
+
+    if (hidden.getAttribute("src") !== nextSrc) {
+      hidden.setAttribute("src", nextSrc);
+    }
+
+    if (hidden.complete && hidden.naturalWidth > 0) {
+      loadedSrcRef.current.add(nextSrc);
+      decodeThenCommit();
+      return;
+    }
+
+    hidden.onload = () => {
+      loadedSrcRef.current.add(nextSrc);
+      decodeThenCommit();
+    };
+    hidden.onerror = () => {
+      if (swapTokenRef.current !== token) return;
+      hidden.onerror = null;
+      hidden.onload = null;
+    };
+  }, []);
+
+  const preloadFrame = useCallback((src: string) => {
+    if (loadedSrcRef.current.has(src)) {
+      return Promise.resolve();
+    }
+
+    if (loadingSrcRef.current.has(src)) {
+      return new Promise<void>((resolve) => {
+        const check = () => {
+          if (loadedSrcRef.current.has(src) || !loadingSrcRef.current.has(src)) {
+            resolve();
+            return;
+          }
+
+          setTimeout(check, 16);
+        };
+
+        check();
+      });
+    }
+
+    loadingSrcRef.current.add(src);
+
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = async () => {
+        loadingSrcRef.current.delete(src);
+        loadedSrcRef.current.add(src);
+
+        try {
+          await img.decode();
+        } catch {
+          // decode() may reject in some browsers even if image loaded.
+        }
+
+        resolve();
+      };
+      img.onerror = () => {
+        loadingSrcRef.current.delete(src);
+        resolve();
+      };
+      img.src = src;
+    });
+  }, []);
+
+  const ensureSequenceReady = useCallback(async () => {
+    if (frames.length <= 1) {
+      sequenceReadyRef.current = true;
+      setIsSequenceReady(true);
+      return;
+    }
+
+    if (sequenceReadyRef.current) {
+      if (!isSequenceReady) {
+        setIsSequenceReady(true);
+      }
+      return;
+    }
+
+    if (!sequenceWarmupPromiseRef.current) {
+      sequenceWarmupPromiseRef.current = (async () => {
+        for (let i = 0; i < frames.length; i += 1) {
+          await preloadFrame(getFrameUrl(i));
+        }
+
+        sequenceReadyRef.current = true;
+        setIsSequenceReady(true);
+      })().finally(() => {
+        sequenceWarmupPromiseRef.current = null;
+      });
+    }
+
+    await sequenceWarmupPromiseRef.current;
+  }, [frames.length, getFrameUrl, isSequenceReady, preloadFrame]);
+
   const setFrameOnImage = useCallback(
     (index: number) => {
-      if (!imageRef.current || frames.length === 0) return;
+      if (!frontImageRef.current || !backImageRef.current || frames.length === 0) return;
 
       const safeIndex = Math.min(Math.max(index, 0), frames.length - 1);
+      requestedFrameRef.current = safeIndex;
       if (safeIndex === currentFrameRef.current) return;
 
       const nextSrc = getFrameUrl(safeIndex);
 
-      const applyFrame = () => {
-        if (!imageRef.current) return;
-        currentFrameRef.current = safeIndex;
-        imageRef.current.src = nextSrc;
-      };
-
       if (loadedSrcRef.current.has(nextSrc)) {
-        applyFrame();
+        swapVisibleFrame(nextSrc, safeIndex);
         return;
       }
 
@@ -103,18 +238,20 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
           // decode() may reject on some browsers even when load succeeded.
         }
 
-        applyFrame();
+        if (requestedFrameRef.current !== safeIndex) return;
+
+        swapVisibleFrame(nextSrc, safeIndex);
       };
       preloadImage.onerror = () => {
         loadingSrcRef.current.delete(nextSrc);
       };
       preloadImage.src = nextSrc;
     },
-    [frames.length, getFrameUrl]
+    [frames.length, getFrameUrl, swapVisibleFrame]
   );
 
   useEffect(() => {
-    if (frames.length <= 1) return;
+    if (frames.length <= 1 || !isSequenceReady) return;
 
     if (intervalRef.current) clearInterval(intervalRef.current);
 
@@ -144,64 +281,50 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isHovered, frames.length, setFrameOnImage]);
+  }, [isHovered, frames.length, isSequenceReady, setFrameOnImage]);
 
   useEffect(() => {
     if (frames.length === 0) return;
 
+    const firstFrameSrc = getFrameUrl(0);
+    const front = frontImageRef.current;
+    const back = backImageRef.current;
+
     sequenceWarmedRef.current = false;
     loadedSrcRef.current.clear();
     loadingSrcRef.current.clear();
-    currentFrameRef.current = -1;
-    setFrameOnImage(0);
-  }, [frames.length, sequenceFolderPath, setFrameOnImage]);
+    sequenceReadyRef.current = frames.length <= 1;
+    sequenceWarmupPromiseRef.current = null;
+    setIsSequenceReady(frames.length <= 1);
+    swapTokenRef.current = 0;
+    isFrontVisibleRef.current = true;
+    requestedFrameRef.current = 0;
+    currentFrameRef.current = 0;
+    loadedSrcRef.current.add(firstFrameSrc);
+
+    if (front && back) {
+      front.setAttribute("src", firstFrameSrc);
+      back.setAttribute("src", firstFrameSrc);
+      front.style.opacity = "1";
+      back.style.opacity = "0";
+    }
+  }, [frames.length, getFrameUrl, sequenceFolderPath]);
 
   useEffect(() => {
     if (!isInView || frames.length <= 1 || sequenceWarmedRef.current) return;
+    if (typeof window !== "undefined") {
+      const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+      if (!supportsHover) return;
+    }
 
-    // Progressive warm-up: avoid flash while keeping the main thread smoother.
+    // Anti-flicker mode: fully preload sequence before allowing frame animation.
     sequenceWarmedRef.current = true;
-    let cancelled = false;
-    let nextFrameIndex = 0;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    const preloadChunk = () => {
-      if (cancelled) return;
-
-      const chunkSize = 6;
-      for (
-        let i = 0;
-        i < chunkSize && nextFrameIndex < frames.length;
-        i += 1, nextFrameIndex += 1
-      ) {
-        const src = getFrameUrl(nextFrameIndex);
-        if (loadedSrcRef.current.has(src) || loadingSrcRef.current.has(src)) continue;
-
-        loadingSrcRef.current.add(src);
-        const img = new Image();
-        img.decoding = "async";
-        img.onload = () => {
-          loadingSrcRef.current.delete(src);
-          loadedSrcRef.current.add(src);
-        };
-        img.onerror = () => {
-          loadingSrcRef.current.delete(src);
-        };
-        img.src = src;
-      }
-
-      if (nextFrameIndex < frames.length) {
-        timeoutId = setTimeout(preloadChunk, 24);
-      }
-    };
-
-    preloadChunk();
+    void ensureSequenceReady();
 
     return () => {
-      cancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
+      // no-op
     };
-  }, [isInView, frames.length, getFrameUrl]);
+  }, [ensureSequenceReady, frames.length, isInView]);
 
   const hasRealImage = Boolean(car.baseImage);
   const hasSequence = frames.length > 0;
@@ -222,6 +345,7 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
           router.push(href);
         }
       }}
+      onFocus={prefetchRoute}
       onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
         if (!href) return;
 
@@ -231,15 +355,15 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
         }
       }}
       onMouseEnter={() => {
+        prefetchRoute();
+        void ensureSequenceReady();
+
         if (frames.length > 0 && currentFrameRef.current < 0) {
           setFrameOnImage(0);
         }
         setIsHovered(true);
       }}
       onMouseLeave={() => {
-        if (frames.length > 1) {
-          setFrameOnImage(frames.length - 1);
-        }
         setIsHovered(false);
       }}
     >
@@ -265,20 +389,29 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
         {/* Car visual area */}
         <div className="relative w-full overflow-hidden" style={{background: 'radial-gradient(ellipse at 60% 50%, #e0e0e0 0%, #ebebeb 100%)'}}>
           {hasSequence ? (
-            <img
-              ref={imageRef}
-              src={getFrameUrl(0)}
-              alt={car.name}
-              className="w-full h-auto block"
-              loading="lazy"
-              decoding="sync"
-              style={{ backgroundColor: "#e8e8e8" }}
-              onLoad={(event) => {
-                const loadedSrc = event.currentTarget.getAttribute("src");
-                if (loadedSrc) loadedSrcRef.current.add(loadedSrc);
-              }}
-              draggable={false}
-            />
+            <div className="grid w-full">
+              <img
+                ref={frontImageRef}
+                src={getFrameUrl(0)}
+                alt={car.name}
+                className="col-start-1 row-start-1 w-full h-auto block"
+                loading={isInView ? "eager" : "lazy"}
+                decoding="async"
+                style={{ backgroundColor: "#e8e8e8", opacity: 1 }}
+                draggable={false}
+              />
+              <img
+                ref={backImageRef}
+                src={getFrameUrl(0)}
+                alt=""
+                aria-hidden="true"
+                className="col-start-1 row-start-1 w-full h-auto block"
+                loading={isInView ? "eager" : "lazy"}
+                decoding="async"
+                style={{ backgroundColor: "#e8e8e8", opacity: 0 }}
+                draggable={false}
+              />
+            </div>
           ) : hasRealImage ? (
             <img
               src={`/car-image(based)/${car.baseImage}`}
@@ -294,7 +427,7 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
               Image unavailable
             </div>
           )}
-          <div className="absolute bottom-0 left-0 right-0 h-6 bg-linear-to-t from-white/60 to-transparent pointer-events-none z-10" />
+          <div className="absolute bottom-0 left-0 right-0 h-6 bg-linear-to-t from-black/10 to-transparent pointer-events-none z-10" />
         </div>
         {/* Car info */}
         <div className="relative" style={{ paddingBlock: "1rem" }}>

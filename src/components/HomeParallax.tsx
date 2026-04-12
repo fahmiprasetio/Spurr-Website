@@ -12,8 +12,9 @@ type HomeParallaxProps = {
 
 const SPLASH_WAIT_CAP = 92;
 const SPLASH_TICK_MS = 24;
-const SPLASH_FALLBACK_READY_MS = 2800;
-const SPLASH_EXIT_DELAY_MS = 240;
+const SPLASH_FALLBACK_READY_MS = 1300;
+const SPLASH_EXIT_DELAY_MS = 160;
+const SPLASH_SESSION_KEY = "spurr:splash-seen:v1";
 
 export default function HomeParallax({ cars }: HomeParallaxProps) {
   const { scrollY } = useScroll();
@@ -22,6 +23,18 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showSplash, setShowSplash] = useState(true);
   const hasResolvedReadyRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hasSeenSplash = window.sessionStorage.getItem(SPLASH_SESSION_KEY) === "1";
+    if (!hasSeenSplash) return;
+
+    hasResolvedReadyRef.current = true;
+    setIsVideoReady(true);
+    setLoadingProgress(100);
+    setShowSplash(false);
+  }, []);
 
   useEffect(() => {
     if (!showSplash) return;
@@ -43,6 +56,10 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
 
     const timeout = setTimeout(() => {
       setShowSplash(false);
+
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(SPLASH_SESSION_KEY, "1");
+      }
     }, SPLASH_EXIT_DELAY_MS);
 
     return () => clearTimeout(timeout);

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { framesMap } from "@/data/frames";
+import ProtectedCarActions from "@/components/ProtectedCarActions";
+import { getCurrentUser } from "@/lib/auth-server";
 import { getCarsFromDb } from "@/lib/cars-db";
+import { prisma } from "@/lib/prisma";
 import { calculateDailyRate, formatRupiah } from "@/lib/rental";
 
 type CarDetailPageProps = {
@@ -31,7 +34,7 @@ function buildOpenStreetMapViewUrl(latitude: number, longitude: number): string 
 
 export default async function CarDetailPage({ params }: CarDetailPageProps) {
   const { carId } = await params;
-  const cars = await getCarsFromDb();
+  const [cars, currentUser] = await Promise.all([getCarsFromDb(), getCurrentUser()]);
   const car = cars.find((item) => item.id === carId);
 
   if (!car) {
@@ -61,6 +64,21 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
     SHOWROOM_LOCATION.latitude,
     SHOWROOM_LOCATION.longitude
   );
+  const rentHref = `/rentals?carId=${encodeURIComponent(car.id)}`;
+
+  const existingWishlist = currentUser
+    ? await prisma.wishlistItem.findUnique({
+        where: {
+          userId_carId: {
+            userId: currentUser.id,
+            carId: car.id,
+          },
+        },
+        select: { id: true },
+      })
+    : null;
+
+  const isInWishlist = Boolean(existingWishlist);
 
   return (
     <main className="min-h-screen bg-white pt-28">
@@ -76,7 +94,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
           </Link>
 
           <Link
-            href={`/rentals?carId=${encodeURIComponent(car.id)}`}
+            href={rentHref}
             className="inline-flex items-center gap-2 border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.18em] text-white hover:bg-white hover:text-black"
           >
             Rent This Car
@@ -141,19 +159,13 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
               <p className="mt-1 text-sm text-gray-600">
                 1 Minggu (7 hari): <span className="font-semibold text-black">{formatRupiah(estimatedWeeklyRate)}</span>
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  href={`/rentals?carId=${encodeURIComponent(car.id)}`}
-                  className="border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.16em] text-white hover:bg-white hover:text-black"
-                >
-                  Continue to Rental
-                </Link>
-                <Link
-                  href="/wishlist"
-                  className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
-                >
-                  Save to Wishlist
-                </Link>
+              <div className="mt-4">
+                <ProtectedCarActions
+                  carId={car.id}
+                  rentHref={rentHref}
+                  initialInWishlist={isInWishlist}
+                  isSignedIn={Boolean(currentUser)}
+                />
               </div>
             </div>
           </article>

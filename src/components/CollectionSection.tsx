@@ -26,12 +26,12 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
     return Array.isArray(frames) && frames.length > 1;
   });
 
-  const featuredFromPreset = HOMEPAGE_FEATURED_IDS
-    .map((carId) => hoverReadyCars.find((car) => car.id === carId))
-    .filter((car): car is Car => Boolean(car));
+  const featuredFromPreset = HOMEPAGE_FEATURED_IDS.map((carId) =>
+    hoverReadyCars.find((car) => car.id === carId),
+  ).filter((car): car is Car => Boolean(car));
 
   const fallbackFeatured = hoverReadyCars.filter(
-    (car) => !HOMEPAGE_FEATURED_IDS.includes(car.id)
+    (car) => !HOMEPAGE_FEATURED_IDS.includes(car.id),
   );
 
   const featured = [...featuredFromPreset, ...fallbackFeatured].slice(0, 4);
@@ -70,7 +70,9 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
               textAlign: "center",
             }}
           >
-            A meticulously curated assembly of the world&apos;s most exceptional automobiles each representing the pinnacle of engineering, performance, and artistry.
+            A meticulously curated assembly of the world&apos;s most exceptional
+            automobiles each representing the pinnacle of engineering,
+            performance, and artistry.
           </p>
         </motion.div>
 
@@ -78,7 +80,7 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
           {featured.map((car) => {
             const sequenceFrames = car.sequenceFolder
-              ? framesMap[car.sequenceFolder] ?? []
+              ? (framesMap[car.sequenceFolder] ?? [])
               : [];
 
             return (

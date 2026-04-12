@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getCarsFromDb } from "@/lib/cars-db";
 
+export const revalidate = 60;
+
 const coreValues = [
   {
     title: "Curated Experience",

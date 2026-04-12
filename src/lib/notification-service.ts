@@ -1,4 +1,4 @@
-import type { NotificationType, Prisma } from "@prisma/client";
+import { Prisma, type NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 type NotificationInput = {
@@ -6,7 +6,7 @@ type NotificationInput = {
   type: NotificationType;
   subject: string;
   message: string;
-  metadata?: Prisma.JsonValue;
+  metadata?: Prisma.InputJsonValue;
 };
 
 export async function queueNotification(input: NotificationInput) {
@@ -16,7 +16,7 @@ export async function queueNotification(input: NotificationInput) {
       type: input.type,
       subject: input.subject,
       message: input.message,
-      metadata: input.metadata ?? null,
+      metadata: input.metadata ?? Prisma.JsonNull,
     },
   });
 }

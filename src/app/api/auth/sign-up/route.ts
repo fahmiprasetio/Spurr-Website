@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   createSession,
@@ -74,6 +75,47 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Sign up error:", error);
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown server error";
+
+    const isDbConnectionIssue =
+      error instanceof Prisma.PrismaClientInitializationError ||
+      /Can't reach database server|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|P1001/i.test(
+        errorMessage
+      );
+
+    if (isDbConnectionIssue) {
+      if (process.env.NODE_ENV !== "production") {
+        return NextResponse.json(
+          {
+            error:
+              "Database belum bisa dijangkau. Coba lagi beberapa saat, atau periksa koneksi database.",
+            detail: errorMessage,
+          },
+          { status: 503 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error:
+            "Database belum bisa dijangkau. Coba lagi beberapa saat, atau periksa koneksi database.",
+        },
+        { status: 503 }
+      );
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.json(
+        {
+          error: "Terjadi kesalahan server saat sign up.",
+          detail: errorMessage,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Terjadi kesalahan server saat sign up." },
       { status: 500 }

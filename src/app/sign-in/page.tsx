@@ -8,7 +8,7 @@ export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = useMemo(() => {
-    const fromQuery = searchParams.get("next");
+    const fromQuery = searchParams?.get("next");
     if (!fromQuery || !fromQuery.startsWith("/")) {
       return "/profile";
     }

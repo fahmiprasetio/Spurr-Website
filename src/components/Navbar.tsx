@@ -131,8 +131,7 @@ export default function Navbar() {
       await fetch("/api/auth/sign-out", { method: "POST" });
       setCurrentUser(null);
       setIsOpen(false);
-      router.push("/");
-      router.refresh();
+      router.replace("/");
     } finally {
       setSigningOut(false);
     }

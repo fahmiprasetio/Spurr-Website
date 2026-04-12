@@ -3,7 +3,10 @@ import { cookies } from "next/headers";
 import { getUserBySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export type CurrentUser = Pick<User, "id" | "name" | "email" | "createdAt" | "role">;
+export type CurrentUser = Pick<
+  User,
+  "id" | "name" | "profileImage" | "email" | "createdAt" | "role"
+>;
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
@@ -22,6 +25,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   return {
     id: user.id,
     name: user.name,
+    profileImage: user.profileImage,
     email: user.email,
     createdAt: user.createdAt,
     role: user.role,

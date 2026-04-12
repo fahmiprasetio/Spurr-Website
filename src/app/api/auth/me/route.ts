@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     user: {
       id: user.id,
       name: user.name,
+      profileImage: user.profileImage,
       email: user.email,
       role: isAdmin ? "ADMIN" : user.role,
     },
