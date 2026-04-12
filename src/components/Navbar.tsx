@@ -153,26 +153,28 @@ export default function Navbar() {
         >
           <nav
             style={{
-              background: isTopTransparent
+              background: isOpen && isTopTransparent
+                ? "rgba(0, 0, 0, 0.7)"
+                : isTopTransparent
                 ? "transparent"
                 : isScrolled
-                  ? "rgba(0, 0, 0, 0.36)"
-                  : "rgba(232,232,232,0.90)",
+                ? "rgba(0, 0, 0, 0.55)"
+                : "rgba(232,232,232,0.90)",
               boxShadow: isScrolled
                 ? "0 0 0.8rem rgba(255,255,255,0.16), 0 0.75rem 2rem rgba(0,0,0,0.28)"
                 : "none",
               paddingInline: contentInset,
               borderRadius: navbarRadius,
-              backdropFilter: isTopTransparent ? "none" : navbarBlur,
-              WebkitBackdropFilter: isTopTransparent ? "none" : navbarBlur,
-              border: isScrolled
-                ? "0.0625rem solid rgba(255,255,255,0.58)"
+              backdropFilter: isTopTransparent && !isOpen ? "none" : navbarBlur,
+              WebkitBackdropFilter: isTopTransparent && !isOpen ? "none" : navbarBlur,
+              border: isScrolled || (isOpen && isTopTransparent)
+                ? "0.0625rem solid rgba(255,255,255,0.10)"
                 : "0.0625rem solid transparent",
-              borderBottom: isTopTransparent
+              borderBottom: isTopTransparent && !isOpen
                 ? "0.0625rem solid rgba(255,255,255,0.72)"
-                : isScrolled
-                  ? "0.0625rem solid rgba(255,255,255,0.58)"
-                  : "0.0625rem solid rgba(0,0,0,0.10)",
+                : isScrolled || (isOpen && isTopTransparent)
+                ? "0.0625rem solid rgba(255,255,255,0.10)"
+                : "0.0625rem solid rgba(0,0,0,0.10)",
               transition: [
                 `background 560ms ${NAVBAR_EASING}`,
                 `box-shadow 560ms ${NAVBAR_EASING}`,
