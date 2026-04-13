@@ -381,7 +381,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     {item.car.year} • {item.car.power} • {item.car.topSpeed}
                   </p>
                   <Link
-                    href={`/collection/${item.car.id}`}
+                    href={`/car/${item.car.id}`}
                     className="mt-4 inline-block border border-black/20 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
                   >
                     Lihat Mobil

@@ -1,7 +1,49 @@
 import { PrismaClient } from "@prisma/client";
+import { randomBytes, scryptSync } from "crypto";
 import { brands, cars } from "../src/data/cars";
 
 const prisma = new PrismaClient();
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+const seedReviews = [
+  {
+    sourceKey: "seed-review-raka-gt3rs",
+    userName: "Raka Pratama",
+    email: "raka.pratama@spurr.demo",
+    carId: "porsche-911",
+    content:
+      "The service was neat and professional. From booking to handover, everything was on time and clearly handled.",
+  },
+  {
+    sourceKey: "seed-review-nadine-chiron",
+    userName: "Nadine Valencia",
+    email: "nadine.valencia@spurr.demo",
+    carId: "bugatti-chiron",
+    content:
+      "I booked this for a brand event in South Jakarta. The car arrived spotless and in perfect condition, and the team was very responsive.",
+  },
+  {
+    sourceKey: "seed-review-fajar-jesko",
+    userName: "Fajar Mahendra",
+    email: "fajar.mahendra@spurr.demo",
+    carId: "koenigsegg-jesko",
+    content:
+      "My first exotic car rental and the process felt simple. The briefing was detailed, so I felt confident throughout the drive.",
+  },
+  {
+    sourceKey: "seed-review-keisha-huayra",
+    userName: "Keisha Adeline",
+    email: "keisha.adeline@spurr.demo",
+    carId: "pagani-huayra",
+    content:
+      "A premium experience from start to finish. Perfect for special occasions, with fast and helpful support from the admin team.",
+  },
+] as const;
 
 async function main() {
   for (const brand of brands) {
@@ -66,12 +108,53 @@ async function main() {
     });
   }
 
-  console.log(`Seed selesai: ${cars.length} mobil dan ${brands.length} brand.`);
+  for (const review of seedReviews) {
+    const targetCar = await prisma.car.findUnique({
+      where: { id: review.carId },
+      select: { id: true },
+    });
+
+    if (!targetCar) {
+      continue;
+    }
+
+    const user = await prisma.user.upsert({
+      where: { email: review.email },
+      update: {
+        name: review.userName,
+      },
+      create: {
+        name: review.userName,
+        email: review.email,
+        passwordHash: hashPassword("SpurrSeed!234"),
+      },
+      select: { id: true },
+    });
+
+    await prisma.carReview.upsert({
+      where: { sourceKey: review.sourceKey },
+      update: {
+        content: review.content,
+        carId: review.carId,
+        userId: user.id,
+      },
+      create: {
+        sourceKey: review.sourceKey,
+        content: review.content,
+        carId: review.carId,
+        userId: user.id,
+      },
+    });
+  }
+
+  console.log(
+    `Seed complete: ${cars.length} cars, ${brands.length} brands, ${seedReviews.length} reviews.`
+  );
 }
 
 main()
   .catch((error) => {
-    console.error("Seed gagal:", error);
+    console.error("Seed failed:", error);
     process.exit(1);
   })
   .finally(async () => {

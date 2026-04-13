@@ -35,12 +35,11 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
   );
 
   const featured = [...featuredFromPreset, ...fallbackFeatured].slice(0, 4);
-  const remainingCount = Math.max(hoverReadyCars.length - featured.length, 0);
 
   return (
     <section
-      id="collection"
-      className="w-full py-32 flex flex-col items-center"
+      id="car"
+      className="w-full pt-28 pb-24 flex flex-col items-center"
       style={{
         background: "#e8e8e8",
         contentVisibility: "auto",
@@ -57,10 +56,10 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
           className="mb-20 flex flex-col items-center gap-6 md:gap-8"
         >
           <p className="text-xs tracking-[0.4em] uppercase text-gray-400 text-center">
-            Curated Selection
+            Curated Collection
           </p>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-black text-center">
-            The Collection
+            Collection
           </h2>
           <p
             className="text-gray-500 text-sm md:text-base leading-relaxed"
@@ -76,20 +75,26 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
           </p>
         </motion.div>
 
-        {/* Car grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
+        {/* Horizontal carousel */}
+        <div className="collection-carousel flex gap-5 overflow-x-auto overflow-y-hidden snap-x snap-mandatory pb-3">
           {featured.map((car) => {
             const sequenceFrames = car.sequenceFolder
               ? (framesMap[car.sequenceFolder] ?? [])
               : [];
 
             return (
-              <CarCard
+              <div
                 key={car.id}
-                car={car}
-                sequenceFrames={sequenceFrames}
-                href={`/collection/${car.id}`}
-              />
+                className="shrink-0 snap-start"
+                style={{ width: "clamp(17rem, 70vw, 27rem)" }}
+              >
+                <CarCard
+                  car={car}
+                  sequenceFrames={sequenceFrames}
+                  href={`/car/${car.id}`}
+                  alwaysShowDetails
+                />
+              </div>
             );
           })}
         </div>
@@ -100,16 +105,13 @@ export default function CollectionSection({ cars }: CollectionSectionProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="flex flex-col items-center mt-16 gap-4"
+          className="flex flex-col items-center mt-16"
         >
-          <p className="text-xs tracking-[0.3em] uppercase text-gray-400">
-            {remainingCount} more vehicles await
-          </p>
           <Link
-            href="/collection"
+            href="/car"
             className="px-12 py-4 border border-black text-black text-sm tracking-[0.25em] uppercase hover:bg-black hover:text-white transition-all duration-300"
           >
-            View Full Collection
+            View All Cars
           </Link>
         </motion.div>
       </div>

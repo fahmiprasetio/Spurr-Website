@@ -21,7 +21,7 @@ export default function ProtectedCarActions({
   const [isSaving, setIsSaving] = useState(false);
 
   function showSignInPopup() {
-    window.alert("Anda belum sign in. Silakan sign in terlebih dahulu untuk menggunakan fitur ini.");
+    window.alert("You need to sign in before using this feature.");
   }
 
   function handleRentClick() {
@@ -61,7 +61,7 @@ export default function ProtectedCarActions({
           return;
         }
 
-        window.alert(result?.error ?? "Gagal menyimpan mobil. Silakan coba lagi.");
+        window.alert(result?.error ?? "Failed to update wishlist. Please try again.");
         return;
       }
 
@@ -87,7 +87,7 @@ export default function ProtectedCarActions({
         disabled={isSaving}
         className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isSaving ? "Menyimpan..." : inWishlist ? "Tersimpan" : "Simpan Mobil"}
+        {isSaving ? "Saving..." : inWishlist ? "Saved" : "Save Car"}
       </button>
     </div>
   );

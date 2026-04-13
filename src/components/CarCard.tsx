@@ -9,9 +9,15 @@ type CarCardProps = {
   car: Car;
   sequenceFrames?: string[];
   href?: string;
+  alwaysShowDetails?: boolean;
 };
 
-export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps) {
+export default function CarCard({
+  car,
+  sequenceFrames = [],
+  href,
+  alwaysShowDetails = false,
+}: CarCardProps) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -348,6 +354,7 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
   const hasRealImage = Boolean(car.baseImage);
   const hasSequence = frames.length > 0;
   const infoInset = "clamp(1rem, 2.8vw, 1.6rem)";
+  const showDetails = alwaysShowDetails || isHovered;
 
   return (
     <motion.div
@@ -466,7 +473,10 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
               </p>
             </div>
             <motion.div
-              animate={{ x: isHovered ? 0 : -5, opacity: isHovered ? 1 : 0 }}
+              animate={{
+                x: showDetails ? 0 : -5,
+                opacity: showDetails ? 1 : 0,
+              }}
               transition={{ duration: 0.3 }}
             >
               <svg
@@ -488,8 +498,8 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
           {/* Specs - visible on hover */}
           <motion.div
             animate={{
-              height: isHovered ? "auto" : 0,
-              opacity: isHovered ? 1 : 0,
+              height: showDetails ? "auto" : 0,
+              opacity: showDetails ? 1 : 0,
             }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
             className="overflow-hidden"

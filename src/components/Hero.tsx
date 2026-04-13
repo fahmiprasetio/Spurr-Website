@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useEffect, useRef } from "react";
 
 const HERO_VIDEO_SRC = "/car-video/hero-section-video-compresed.mp4";
@@ -74,14 +75,21 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
           </p>
         </motion.div>
 
-        <motion.h1
+        <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-          className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight text-white leading-none"
+          className="mx-auto w-[min(30rem,72vw)]"
         >
-          SPURR
-        </motion.h1>
+          <Image
+            src="/logo-spurr.png"
+            alt="SPURR"
+            width={680}
+            height={180}
+            priority
+            className="h-auto w-full object-contain"
+          />
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -89,7 +97,7 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
           transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
         >
           <p className="text-lg md:text-xl text-gray-100/95 max-w-2xl mx-auto leading-relaxed font-light">
-            A definitive showcase of the world&apos;s most extraordinary performance automobiles — where Italian artistry, German precision, and Japanese mastery converge in singular pursuit of excellence.
+            A definitive showcase of the world&apos;s most extraordinary performance automobiles where Italian artistry, German precision, and Japanese mastery converge in singular pursuit of excellence.
           </p>
         </motion.div>
 
@@ -100,7 +108,7 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
           className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <a
-            href="#collection"
+            href="#car"
             className="inline-flex items-center justify-center border border-white/80 bg-transparent text-white text-sm md:text-base tracking-[0.18em] uppercase hover:bg-white/14 hover:border-white transition-all duration-300"
             style={{
               padding: "1rem clamp(2rem, 4vw, 2.9rem)",
@@ -109,7 +117,7 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
               borderRadius: "0.2rem",
             }}
           >
-            Explore the Collection
+            Explore the Cars
           </a>
         </motion.div>
 

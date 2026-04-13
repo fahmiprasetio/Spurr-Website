@@ -15,9 +15,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SPURR — Exotic & Sport Cars",
+  title: "SPURR | Exotic & Sport Cars",
   description:
     "Discover the world's most iconic sport cars. Ferrari, Bugatti, Porsche, Lamborghini, and more.",
+  icons: {
+    icon: "/logo-spurr.png",
+    shortcut: "/logo-spurr.png",
+    apple: "/logo-spurr.png",
+  },
 };
 
 export default function RootLayout({

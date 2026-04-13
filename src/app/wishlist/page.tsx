@@ -97,7 +97,7 @@ export default async function WishlistPage() {
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
-                  href={`/collection/${item.car.id}`}
+                  href={`/car/${item.car.id}`}
                   className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.2em] text-black transition-colors hover:bg-black hover:text-white"
                 >
                   Lihat Detail

@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Car } from "@/data/cars";
 import Hero from "@/components/Hero";
 import CollectionSection from "@/components/CollectionSection";
+import HowItWorksSection from "@/components/sections/HowItWorksSection";
+import TestimonialsSection from "@/components/sections/TestimonialsSection";
 
 type HomeParallaxProps = {
   cars: Car[];
@@ -117,7 +119,7 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
     damping: 28,
     mass: 0.75,
   });
-  const sectionRadius = useTransform(scrollY, [0, 500], [28, 0]);
+  const sectionRadius = useTransform(scrollY, [0, 500], [44, 0]);
 
   return (
     <div className="relative">
@@ -166,6 +168,9 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
         >
           <CollectionSection cars={cars} />
         </motion.div>
+
+        <HowItWorksSection />
+        <TestimonialsSection />
       </motion.div>
     </div>
   );

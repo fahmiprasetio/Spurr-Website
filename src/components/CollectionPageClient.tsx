@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import CarCard from "@/components/CarCard";
 import type { Car } from "@/data/cars";
 import { framesMap } from "@/data/frames";
@@ -22,7 +21,7 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
     <main className="min-h-screen bg-white">
       {/* Header */}
       <div
-        className="w-full py-32 flex flex-col items-center border-b border-black/5"
+        className="w-full flex flex-col items-center border-b border-black/5 pt-28 pb-16 md:pt-32 md:pb-20"
         style={{ background: "#fafafa" }}
       >
         <div className="w-full max-w-7xl px-6 lg:px-8 text-center">
@@ -31,25 +30,15 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-xs tracking-[0.3em] uppercase text-gray-400 hover:text-black transition-colors duration-200 mb-10"
-            >
-              <span>←</span>
-              <span>Return to Home</span>
-            </Link>
             <p className="text-xs tracking-[0.4em] uppercase text-gray-400 mb-4">
-              Complete Catalogue
+              Curated Selection
             </p>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-black">
-              The Full Collection
+              Signature Catalogue
             </h1>
             <div className="w-12 h-px bg-black/20 mx-auto mt-6 mb-6" />
             <p className="text-gray-500 max-w-xl mx-auto text-sm leading-relaxed">
-              Every vehicle in our curated catalogue — from the measured refinement of grand tourers to the unbridled ferocity of hypercars. Each one a masterwork in its own right.
-            </p>
-            <p className="text-xs tracking-[0.3em] uppercase text-gray-400 mt-6">
-              {hoverReadyCars.length} Interactive Vehicles
+              Discover our current lineup of handpicked performance cars, built for refined city cruising and unforgettable weekend drives.
             </p>
           </motion.div>
         </div>
@@ -70,10 +59,19 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
                 <CarCard
                   car={car}
                   sequenceFrames={car.sequenceFolder ? framesMap[car.sequenceFolder] ?? [] : []}
-                  href={`/collection/${car.id}`}
+                  href={`/car/${car.id}`}
                 />
               </motion.div>
             ))}
+          </div>
+
+          <div className="mt-16 border border-black/10 bg-white/90 px-6 py-8 text-center">
+            <p className="text-xs uppercase tracking-[0.28em] text-gray-400">
+              More to come
+            </p>
+            <p className="mt-4 text-sm leading-relaxed text-gray-600">
+              Additional icons are being prepared and will be added to the catalogue soon.
+            </p>
           </div>
         </div>
       </section>

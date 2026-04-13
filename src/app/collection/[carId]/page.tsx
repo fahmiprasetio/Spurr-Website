@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { framesMap } from "@/data/frames";
 import ProtectedCarActions from "@/components/ProtectedCarActions";
+import CarReviewsPanel from "@/components/CarReviewsPanel";
 import { getCurrentUser } from "@/lib/auth-server";
 import { getCarsFromDb } from "@/lib/cars-db";
 import { prisma } from "@/lib/prisma";
@@ -65,6 +66,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
     SHOWROOM_LOCATION.longitude
   );
   const rentHref = `/rentals?carId=${encodeURIComponent(car.id)}`;
+  const commentsHref = `/car/${encodeURIComponent(car.id)}/comments`;
 
   const existingWishlist = currentUser
     ? await prisma.wishlistItem.findUnique({
@@ -80,17 +82,42 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
 
   const isInWishlist = Boolean(existingWishlist);
 
+  const reviews = await prisma.carReview.findMany({
+    where: { carId: car.id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  const reviewItems = reviews.map((review) => {
+    const fallbackName = review.user.email.split("@")[0] || "SPURR Driver";
+
+    return {
+      id: review.id,
+      comment: review.content,
+      createdAt: review.createdAt.toISOString(),
+      userName: review.user.name?.trim() || fallbackName,
+      userEmail: review.user.email,
+    };
+  });
+
   return (
     <main className="min-h-screen bg-white pt-28">
       <section className="w-full min-h-[calc(100vh-7rem)] bg-white">
         <div className="mx-auto w-full max-w-7xl space-y-8 px-6 pb-10 md:px-8 md:pb-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
-            href="/collection"
+            href="/car"
             className="inline-flex items-center gap-2 border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
           >
             <span>←</span>
-            <span>Back to Collection</span>
+            <span>Back to Cars</span>
           </Link>
 
           <Link
@@ -154,10 +181,10 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
             <div className="mt-5 border border-black/10 bg-black/2 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Estimated Rental</p>
               <p className="mt-2 text-sm text-gray-600">
-                Weekend (2 hari): <span className="font-semibold text-black">{formatRupiah(estimatedWeekendRate)}</span>
+                Weekend (2 days): <span className="font-semibold text-black">{formatRupiah(estimatedWeekendRate)}</span>
               </p>
               <p className="mt-1 text-sm text-gray-600">
-                1 Minggu (7 hari): <span className="font-semibold text-black">{formatRupiah(estimatedWeeklyRate)}</span>
+                1 Week (7 days): <span className="font-semibold text-black">{formatRupiah(estimatedWeeklyRate)}</span>
               </p>
               <div className="mt-4">
                 <ProtectedCarActions
@@ -169,6 +196,25 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
               </div>
             </div>
           </article>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-black">Reviews</h2>
+            <Link
+              href={commentsHref}
+              className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
+            >
+              Open comments page
+            </Link>
+          </div>
+
+          <CarReviewsPanel
+            carId={car.id}
+            carName={car.name}
+            isSignedIn={Boolean(currentUser)}
+            initialReviews={reviewItems}
+          />
         </div>
 
         <article className="border border-black/10 bg-white p-5">

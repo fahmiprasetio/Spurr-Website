@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
 
   if (!currentUser) {
     return NextResponse.json(
-      { error: "Anda belum sign in. Silakan sign in terlebih dahulu." },
+      { error: "You need to sign in before using this feature." },
       { status: 401 }
     );
   }
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   const carId = typeof body?.carId === "string" ? body.carId.trim() : "";
 
   if (!carId) {
-    return NextResponse.json({ error: "carId wajib diisi." }, { status: 400 });
+    return NextResponse.json({ error: "carId is required." }, { status: 400 });
   }
 
   const targetCar = await prisma.car.findUnique({
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (!targetCar) {
-    return NextResponse.json({ error: "Mobil tidak ditemukan." }, { status: 404 });
+    return NextResponse.json({ error: "Car not found." }, { status: 404 });
   }
 
   const existing = await prisma.wishlistItem.findUnique({

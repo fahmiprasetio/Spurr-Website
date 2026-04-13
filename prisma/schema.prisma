@@ -84,6 +84,7 @@ model Car {
   brandId        Int
   brand          Brand     @relation(fields: [brandId], references: [id], onDelete: Restrict)
   rentals        Rental[]
+  reviews        CarReview[]
   wishlistItems  WishlistItem[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -102,10 +103,26 @@ model User {
   sessions     Session[]
   rentals      Rental[]
   payments     Payment[]
+  reviews      CarReview[]
   wishlistItems WishlistItem[]
   notifications EmailNotification[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model CarReview {
+  id        String   @id @default(cuid())
+  sourceKey String?  @unique
+  carId     String
+  userId    String
+  content   String   @db.Text
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([carId])
+  @@index([userId])
 }
 
 model Session {

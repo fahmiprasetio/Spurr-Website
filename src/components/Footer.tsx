@@ -10,7 +10,7 @@ export default function Footer() {
           marginInline: "auto",
           paddingInline: "clamp(0.75rem, 2vw, 1.5rem)",
           paddingTop: "4rem",
-          paddingBottom: "3.5rem",
+          paddingBottom: "1.5rem",
         }}
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start justify-items-center md:justify-items-start">
@@ -42,10 +42,10 @@ export default function Footer() {
                 Home
               </Link>
               <Link
-                href="/#collection"
+                href="/#car"
                 className="text-sm text-gray-300 hover:text-white transition-colors"
               >
-                Collection
+                Car
               </Link>
               <Link
                 href="/about"
@@ -88,14 +88,9 @@ export default function Footer() {
           </div>
         </div>
 
-        <div
-          className="flex flex-col items-center mt-20 pt-6 border-t border-gray-800"
-        >
-          <p className="text-xs text-gray-500 tracking-wider mb-1">
-            &copy; {new Date().getFullYear()} SPURR. All rights reserved.
-          </p>
-          <p className="text-xs text-gray-500 tracking-wider">
-            Crafted with passion.
+        <div className="flex items-center justify-center mt-20 pt-6 border-t border-gray-800">
+          <p className="text-xs text-gray-500 tracking-wider text-center">
+            &copy; {new Date().getFullYear()} SPURR. All rights reserved. Crafted with passion.
           </p>
         </div>
       </div>

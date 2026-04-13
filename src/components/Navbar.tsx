@@ -70,17 +70,23 @@ export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const isHomeRoute = pathname === "/";
   const isTopTransparent = isHomeRoute && !isScrolled;
-  const useLightForeground = true;
+  const useLightForeground = isTopTransparent || isScrolled;
   const contentInset = isScrolled
     ? "clamp(1rem, 2.6vw, 1.75rem)"
     : "clamp(1.375rem, 4vw, 3.25rem)";
-  const navbarWidth = isScrolled ? "min(50rem, calc(100vw - 2rem))" : "100vw";
+  const navbarWidth = isScrolled ? "min(40rem, calc(100vw - 2rem))" : "100vw";
   const navbarOffsetY = isScrolled ? "0.75rem" : "0rem";
   const navbarRadius = isScrolled ? "0.875rem" : "0rem";
   const navbarBlur = isScrolled ? "blur(0.375rem)" : "blur(0.625rem)";
-  const menuItems = [
-    { label: "Collection", href: isHomeRoute ? "#collection" : "/#collection" },
+  const publicMenuItems = [
+    { label: "Home", href: "/" },
+    { label: "Cars", href: "/car" },
     { label: "About", href: "/about" },
+  ];
+  const signedInMenuItems = [
+    ...publicMenuItems,
+    { label: "Profile", href: "/profile" },
+    { label: "Notification", href: "/notifications" },
   ];
 
   useEffect(() => {
@@ -156,22 +162,32 @@ export default function Navbar() {
                 ? "transparent"
                 : isScrolled
                 ? "rgba(0, 0, 0, 0.55)"
-                : "rgba(0, 0, 0, 0.72)",
+                : "rgba(250, 250, 250, 0.96)",
               boxShadow: isScrolled
                 ? "0 0 0.8rem rgba(255,255,255,0.16), 0 0.75rem 2rem rgba(0,0,0,0.28)"
                 : "none",
               paddingInline: contentInset,
               borderRadius: navbarRadius,
-              backdropFilter: isTopTransparent && !isOpen ? "none" : navbarBlur,
-              WebkitBackdropFilter: isTopTransparent && !isOpen ? "none" : navbarBlur,
+              backdropFilter: isTopTransparent && !isOpen
+                ? "none"
+                : isScrolled
+                ? navbarBlur
+                : "none",
+              WebkitBackdropFilter: isTopTransparent && !isOpen
+                ? "none"
+                : isScrolled
+                ? navbarBlur
+                : "none",
               border: isScrolled || (isOpen && isTopTransparent)
-                ? "0.0625rem solid rgba(255,255,255,0.10)"
-                : "0.0625rem solid transparent",
+                ? isScrolled
+                  ? "0.0625rem solid rgba(255,255,255,0.35)"
+                  : "0.0625rem solid rgba(255,255,255,0.10)"
+                : "0.0625rem solid rgba(0,0,0,0.08)",
               borderBottom: isTopTransparent && !isOpen
                 ? "0.0625rem solid rgba(255,255,255,0.72)"
                 : isScrolled || (isOpen && isTopTransparent)
                 ? "0.0625rem solid rgba(255,255,255,0.10)"
-                : "0.0625rem solid rgba(255,255,255,0.16)",
+                : "0.0625rem solid rgba(0,0,0,0.1)",
               transition: [
                 `background 560ms ${NAVBAR_EASING}`,
                 `box-shadow 560ms ${NAVBAR_EASING}`,
@@ -259,7 +275,9 @@ export default function Navbar() {
               style={{
                 width: navbarWidth,
                 borderRadius: navbarRadius,
-                border: "0.0625rem solid rgba(255,255,255,0.10)",
+                border: isScrolled
+                  ? "0.0625rem solid rgba(255,255,255,0.35)"
+                  : "0.0625rem solid rgba(255,255,255,0.10)",
                 backdropFilter: isScrolled ? "blur(0.5rem)" : "blur(0.75rem)",
                 WebkitBackdropFilter: isScrolled
                   ? "blur(0.5rem)"
@@ -279,7 +297,7 @@ export default function Navbar() {
                   transition: `padding-inline 560ms ${NAVBAR_EASING}`,
                 }}
               >
-                {menuItems.map((item) => (
+                {(currentUser ? signedInMenuItems : publicMenuItems).map((item) => (
                   <NavMenuItem
                     key={item.href}
                     label={item.label}
@@ -295,43 +313,11 @@ export default function Navbar() {
                     Loading account...
                   </p>
                 ) : currentUser ? (
-                  <>
-                    <p className="text-xs tracking-[0.16em] uppercase text-white/55">
-                      Signed in: {(currentUser.name || currentUser.email).toUpperCase()}
-                    </p>
-                    <NavMenuItem
-                      label="Wishlist"
-                      href="/wishlist"
-                      onClick={() => setIsOpen(false)}
-                    />
-                    <NavMenuItem
-                      label="Rentals"
-                      href="/rentals"
-                      onClick={() => setIsOpen(false)}
-                    />
-                    <NavMenuItem
-                      label="Notifications"
-                      href="/notifications"
-                      onClick={() => setIsOpen(false)}
-                    />
-                    <NavMenuItem
-                      label="Profile"
-                      href="/profile"
-                      onClick={() => setIsOpen(false)}
-                    />
-                    {currentUser.role === "ADMIN" ? (
-                      <NavMenuItem
-                        label="Admin"
-                        href="/admin"
-                        onClick={() => setIsOpen(false)}
-                      />
-                    ) : null}
-                    <NavActionButton
-                      label={signingOut ? "Signing Out..." : "Sign Out"}
-                      onClick={handleSignOut}
-                      disabled={signingOut}
-                    />
-                  </>
+                  <NavActionButton
+                    label={signingOut ? "Signing Out..." : "Sign Out"}
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                  />
                 ) : (
                   <div className="flex justify-center items-center gap-8 w-full">
                     <NavMenuItem

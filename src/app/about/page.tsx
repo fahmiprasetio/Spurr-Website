@@ -113,15 +113,15 @@ export default async function AboutPage() {
         <section className="border border-black/10 bg-black p-6 text-white">
           <h2 className="text-2xl font-semibold tracking-tight">Explore, Save, and Rent</h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/80">
-            Ingin mulai menjelajahi koleksi? Anda bisa langsung menuju halaman collection, menyimpan mobil favorit,
+            Ingin mulai menjelajahi koleksi? Anda bisa langsung menuju halaman car, menyimpan mobil favorit,
             dan melanjutkan ke proses rental kapan pun siap.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              href="/collection"
+              href="/car"
               className="border border-white bg-white px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
             >
-              View Collection
+              View Cars
             </Link>
             <Link
               href="/wishlist"
