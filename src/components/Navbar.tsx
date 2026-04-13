@@ -70,7 +70,7 @@ export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const isHomeRoute = pathname === "/";
   const isTopTransparent = isHomeRoute && !isScrolled;
-  const useLightForeground = isTopTransparent || isScrolled;
+  const useLightForeground = true;
   const contentInset = isScrolled
     ? "clamp(1rem, 2.6vw, 1.75rem)"
     : "clamp(1.375rem, 4vw, 3.25rem)";
@@ -156,7 +156,7 @@ export default function Navbar() {
                 ? "transparent"
                 : isScrolled
                 ? "rgba(0, 0, 0, 0.55)"
-                : "rgba(232,232,232,0.90)",
+                : "rgba(0, 0, 0, 0.72)",
               boxShadow: isScrolled
                 ? "0 0 0.8rem rgba(255,255,255,0.16), 0 0.75rem 2rem rgba(0,0,0,0.28)"
                 : "none",
@@ -171,7 +171,7 @@ export default function Navbar() {
                 ? "0.0625rem solid rgba(255,255,255,0.72)"
                 : isScrolled || (isOpen && isTopTransparent)
                 ? "0.0625rem solid rgba(255,255,255,0.10)"
-                : "0.0625rem solid rgba(0,0,0,0.10)",
+                : "0.0625rem solid rgba(255,255,255,0.16)",
               transition: [
                 `background 560ms ${NAVBAR_EASING}`,
                 `box-shadow 560ms ${NAVBAR_EASING}`,

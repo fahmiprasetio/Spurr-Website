@@ -40,6 +40,8 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
   // This lets each sequence finish naturally based on its own frame count.
   const FORWARD_FPS = 24;
   const REVERSE_FPS = 20;
+  const PRELOAD_CONCURRENCY = 10;
+  const READY_FRAME_COUNT = 20;
 
   useEffect(() => {
     const node = cardRef.current;
@@ -52,7 +54,7 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
           observer.disconnect();
         }
       },
-      { rootMargin: "120px 0px" }
+      { rootMargin: "320px 0px" }
     );
 
     observer.observe(node);
@@ -193,12 +195,29 @@ export default function CarCard({ car, sequenceFrames = [], href }: CarCardProps
 
     if (!sequenceWarmupPromiseRef.current) {
       sequenceWarmupPromiseRef.current = (async () => {
-        for (let i = 0; i < frames.length; i += 1) {
-          await preloadFrame(getFrameUrl(i));
+        const readyFrameCount = Math.min(frames.length, READY_FRAME_COUNT);
+
+        // Load a near-term chunk first so hover can start quickly on slower networks.
+        if (readyFrameCount > 0) {
+          await Promise.all(
+            Array.from({ length: readyFrameCount }, (_, index) =>
+              preloadFrame(getFrameUrl(index))
+            )
+          );
         }
 
         sequenceReadyRef.current = true;
         setIsSequenceReady(true);
+
+        // Continue warming the remaining frames in small parallel batches.
+        for (let start = readyFrameCount; start < frames.length; start += PRELOAD_CONCURRENCY) {
+          const end = Math.min(start + PRELOAD_CONCURRENCY, frames.length);
+          await Promise.all(
+            Array.from({ length: end - start }, (_, offset) =>
+              preloadFrame(getFrameUrl(start + offset))
+            )
+          );
+        }
       })().finally(() => {
         sequenceWarmupPromiseRef.current = null;
       });
