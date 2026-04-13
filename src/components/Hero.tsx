@@ -96,7 +96,7 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
         >
-          <p className="text-lg md:text-xl text-gray-100/95 max-w-2xl mx-auto leading-relaxed font-light">
+          <p className="text-lg md:text-xl text-gray-100/95 max-w-2xl mx-auto leading-relaxed font-light mt-10">
             A definitive showcase of the world&apos;s most extraordinary performance automobiles where Italian artistry, German precision, and Japanese mastery converge in singular pursuit of excellence.
           </p>
         </motion.div>
@@ -108,7 +108,7 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
           className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <a
-            href="#car"
+            href="/car"
             className="inline-flex items-center justify-center border border-white/80 bg-transparent text-white text-sm md:text-base tracking-[0.18em] uppercase hover:bg-white/14 hover:border-white transition-all duration-300"
             style={{
               padding: "1rem clamp(2rem, 4vw, 2.9rem)",
@@ -122,18 +122,6 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
         </motion.div>
 
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-      >
-        <span className="text-[10px] tracking-[0.3em] uppercase text-white/80">
-          Scroll
-        </span>
-      </motion.div>
     </section>
   );
 }
