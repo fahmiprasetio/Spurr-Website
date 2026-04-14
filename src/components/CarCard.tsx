@@ -5,11 +5,22 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { Car } from "@/data/cars";
 
+type QualityTier = "high" | "balanced" | "light";
+
+type NavigatorWithPerformanceHints = Navigator & {
+  deviceMemory?: number;
+  connection?: {
+    effectiveType?: string;
+    saveData?: boolean;
+  };
+};
+
 type CarCardProps = {
   car: Car;
   sequenceFrames?: string[];
   href?: string;
   alwaysShowDetails?: boolean;
+  performanceMode?: "auto" | "light";
 };
 
 export default function CarCard({
@@ -17,11 +28,15 @@ export default function CarCard({
   sequenceFrames = [],
   href,
   alwaysShowDetails = false,
+  performanceMode = "auto",
 }: CarCardProps) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [isSequenceReady, setIsSequenceReady] = useState(false);
+  const [qualityTier, setQualityTier] = useState<QualityTier>(
+    performanceMode === "light" ? "light" : "balanced"
+  );
   const cardRef = useRef<HTMLDivElement | null>(null);
   const frontImageRef = useRef<HTMLImageElement | null>(null);
   const backImageRef = useRef<HTMLImageElement | null>(null);
@@ -42,12 +57,42 @@ export default function CarCard({
       ? `${car.sequenceFolder}/`
       : "";
 
-  // Animation logic: keep per-frame speed consistent across cars.
-  // This lets each sequence finish naturally based on its own frame count.
-  const FORWARD_FPS = 24;
-  const REVERSE_FPS = 20;
-  const PRELOAD_CONCURRENCY = 10;
-  const READY_FRAME_COUNT = 20;
+  const FORWARD_FPS = qualityTier === "high" ? 24 : qualityTier === "balanced" ? 20 : 16;
+  const REVERSE_FPS = qualityTier === "high" ? 18 : qualityTier === "balanced" ? 15 : 12;
+  const PRELOAD_CONCURRENCY =
+    qualityTier === "high" ? 8 : qualityTier === "balanced" ? 5 : 3;
+  const READY_FRAME_COUNT = qualityTier === "high" ? 20 : qualityTier === "balanced" ? 14 : 10;
+  // Only reduce effective frame count during reverse hover.
+  const REVERSE_FRAME_STRIDE = qualityTier === "high" ? 2 : qualityTier === "balanced" ? 2 : 3;
+
+  useEffect(() => {
+    if (performanceMode === "light") {
+      setQualityTier("light");
+      return;
+    }
+
+    if (typeof window === "undefined") return;
+
+    const nav = navigator as NavigatorWithPerformanceHints;
+    const cores = nav.hardwareConcurrency ?? 8;
+    const memory = nav.deviceMemory ?? 8;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const saveData = Boolean(nav.connection?.saveData);
+    const effectiveType = nav.connection?.effectiveType ?? "";
+    const isSlowNetwork = effectiveType.includes("2g") || effectiveType.includes("3g");
+
+    if (prefersReducedMotion || saveData || cores <= 4 || memory <= 4 || isSlowNetwork) {
+      setQualityTier("light");
+      return;
+    }
+
+    if (cores <= 8 || memory <= 8) {
+      setQualityTier("balanced");
+      return;
+    }
+
+    setQualityTier("high");
+  }, [performanceMode]);
 
   useEffect(() => {
     const node = cardRef.current;
@@ -215,6 +260,10 @@ export default function CarCard({
         sequenceReadyRef.current = true;
         setIsSequenceReady(true);
 
+        if (qualityTier !== "high") {
+          return;
+        }
+
         // Continue warming the remaining frames in small parallel batches.
         for (let start = readyFrameCount; start < frames.length; start += PRELOAD_CONCURRENCY) {
           const end = Math.min(start + PRELOAD_CONCURRENCY, frames.length);
@@ -230,7 +279,15 @@ export default function CarCard({
     }
 
     await sequenceWarmupPromiseRef.current;
-  }, [frames.length, getFrameUrl, isSequenceReady, preloadFrame]);
+  }, [
+    PRELOAD_CONCURRENCY,
+    READY_FRAME_COUNT,
+    frames.length,
+    getFrameUrl,
+    isSequenceReady,
+    preloadFrame,
+    qualityTier,
+  ]);
 
   const setFrameOnImage = useCallback(
     (index: number) => {
@@ -281,7 +338,7 @@ export default function CarCard({
     if (intervalRef.current) clearInterval(intervalRef.current);
 
     const targetFrame = isHovered ? frames.length - 1 : 0;
-    const step = isHovered ? 1 : -1;
+    const step = isHovered ? 1 : -REVERSE_FRAME_STRIDE;
     const frameInterval = Math.max(
       16,
       Math.floor(1000 / (isHovered ? FORWARD_FPS : REVERSE_FPS))
@@ -300,13 +357,26 @@ export default function CarCard({
         return;
       }
 
-      setFrameOnImage(next);
+      const reachedTarget = isHovered ? next >= targetFrame : next <= targetFrame;
+      setFrameOnImage(reachedTarget ? targetFrame : next);
+
+      if (reachedTarget) {
+        clearInterval(intervalRef.current!);
+      }
     }, frameInterval);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isHovered, frames.length, isSequenceReady, setFrameOnImage]);
+  }, [
+    FORWARD_FPS,
+    REVERSE_FPS,
+    REVERSE_FRAME_STRIDE,
+    isHovered,
+    frames.length,
+    isSequenceReady,
+    setFrameOnImage,
+  ]);
 
   useEffect(() => {
     if (frames.length === 0) return;
@@ -393,7 +463,10 @@ export default function CarCard({
         setIsHovered(false);
       }}
     >
-      <div className="relative overflow-hidden border border-gray-200 hover:border-gray-400 hover:shadow-xl shadow-sm transition-all duration-500" style={{borderRadius: '2px', background: '#e8e8e8'}}>
+      <div
+        className="relative overflow-hidden border border-gray-200 shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-gray-300 hover:shadow-[0_10px_24px_rgba(0,0,0,0.12)]"
+        style={{ borderRadius: "2px", background: "#e8e8e8" }}
+      >
         {/* Brand tag */}
         <div
           className="absolute z-10"
@@ -413,7 +486,13 @@ export default function CarCard({
           </span>
         </div>
         {/* Car visual area */}
-        <div className="relative w-full overflow-hidden" style={{background: 'radial-gradient(ellipse at 60% 50%, #e0e0e0 0%, #ebebeb 100%)'}}>
+        <div
+          className="relative w-full overflow-hidden"
+          style={{
+            background: "radial-gradient(ellipse at 60% 50%, #e0e0e0 0%, #ebebeb 100%)",
+            contain: "paint",
+          }}
+        >
           {hasSequence ? (
             <div className="grid w-full">
               <img
@@ -423,7 +502,13 @@ export default function CarCard({
                 className="col-start-1 row-start-1 w-full h-auto block"
                 loading={isInView ? "eager" : "lazy"}
                 decoding="async"
-                style={{ backgroundColor: "#e8e8e8", opacity: 1 }}
+                style={{
+                  backgroundColor: "#e8e8e8",
+                  opacity: 1,
+                  willChange: "opacity",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                }}
                 draggable={false}
               />
               <img
@@ -434,7 +519,13 @@ export default function CarCard({
                 className="col-start-1 row-start-1 w-full h-auto block"
                 loading={isInView ? "eager" : "lazy"}
                 decoding="async"
-                style={{ backgroundColor: "#e8e8e8", opacity: 0 }}
+                style={{
+                  backgroundColor: "#e8e8e8",
+                  opacity: 0,
+                  willChange: "opacity",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                }}
                 draggable={false}
               />
             </div>

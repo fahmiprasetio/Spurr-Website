@@ -61,6 +61,10 @@ type AuthUser = {
   role: "USER" | "ADMIN";
 };
 
+function normalizePath(path: string) {
+  return path.replace(/\/+$/, "") || "/";
+}
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -69,7 +73,17 @@ export default function Navbar() {
   const [authLoading, setAuthLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const isHomeRoute = pathname === "/";
+  const [isHomeRoute, setIsHomeRoute] = useState(() => {
+    if (pathname && pathname.trim().length > 0) {
+      return normalizePath(pathname) === "/";
+    }
+
+    if (typeof window !== "undefined") {
+      return normalizePath(window.location.pathname) === "/";
+    }
+
+    return true;
+  });
   const isTopTransparent = isHomeRoute && !isScrolled;
   const useLightForeground = isTopTransparent || isScrolled;
   const contentInset = isScrolled
@@ -89,6 +103,15 @@ export default function Navbar() {
     { label: "Profile", href: "/profile" },
     { label: "Notification", href: "/notifications" },
   ];
+
+  useEffect(() => {
+    const rawPath =
+      pathname && pathname.trim().length > 0
+        ? pathname
+        : window.location.pathname;
+
+    setIsHomeRoute(normalizePath(rawPath) === "/");
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {

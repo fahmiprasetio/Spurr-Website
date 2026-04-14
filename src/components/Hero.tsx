@@ -11,7 +11,10 @@ type HeroProps = {
   onVideoReady?: () => void;
 };
 
-export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) {
+export default function Hero({
+  isVideoActive = true,
+  onVideoReady,
+}: HeroProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hasNotifiedReadyRef = useRef(false);
 
@@ -38,23 +41,23 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          className="absolute inset-0 h-full w-full object-cover"
-          src={HERO_VIDEO_SRC}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          onLoadedData={notifyVideoReady}
-          onCanPlay={notifyVideoReady}
-          onPlaying={notifyVideoReady}
-        />
-        <div className="absolute inset-0 bg-black/52" />
+      <video
+        ref={videoRef}
+        className="absolute inset-0 h-full w-full object-cover"
+        src={HERO_VIDEO_SRC}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        onLoadedData={notifyVideoReady}
+        onCanPlay={notifyVideoReady}
+        onPlaying={notifyVideoReady}
+      />
+      <div className="absolute inset-0 bg-black/52" />
 
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-[0.07]">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-[0.07]">
         <div
           className="absolute inset-0"
           style={{
@@ -97,7 +100,9 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
           transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
         >
           <p className="text-lg md:text-xl text-gray-100/95 max-w-2xl mx-auto leading-relaxed font-light mt-10">
-            A definitive showcase of the world&apos;s most extraordinary performance automobiles where Italian artistry, German precision, and Japanese mastery converge in singular pursuit of excellence.
+            A definitive showcase of the world&apos;s most extraordinary
+            performance automobiles where Italian artistry, German precision,
+            and Japanese mastery converge in singular pursuit of excellence.
           </p>
         </motion.div>
 
@@ -120,7 +125,6 @@ export default function Hero({ isVideoActive = true, onVideoReady }: HeroProps) 
             Explore the Cars
           </a>
         </motion.div>
-
       </div>
     </section>
   );
