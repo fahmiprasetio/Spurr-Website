@@ -65,6 +65,20 @@ function normalizePath(path: string) {
   return path.replace(/\/+$/, "") || "/";
 }
 
+const KNOWN_NON_HOME_PREFIXES = [
+  "/about",
+  "/admin",
+  "/car",
+  "/collection",
+  "/notifications",
+  "/profile",
+  "/rentals",
+  "/saved",
+  "/sign-in",
+  "/sign-up",
+  "/wishlist",
+];
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -73,19 +87,17 @@ export default function Navbar() {
   const [authLoading, setAuthLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [isHomeRoute, setIsHomeRoute] = useState(() => {
-    if (pathname && pathname.trim().length > 0) {
-      return normalizePath(pathname) === "/";
-    }
 
-    if (typeof window !== "undefined") {
-      return normalizePath(window.location.pathname) === "/";
-    }
+  const fallbackPath = typeof window !== "undefined" ? window.location.pathname : "/";
+  const normalizedPath = normalizePath(pathname || fallbackPath);
+  const isKnownNonHomeRoute = KNOWN_NON_HOME_PREFIXES.some(
+    (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
+  );
+  const isHomeRoute = !isKnownNonHomeRoute;
 
-    return true;
-  });
   const isTopTransparent = isHomeRoute && !isScrolled;
   const useLightForeground = isTopTransparent || isScrolled;
+  const foregroundColor = useLightForeground ? "#ffffff" : "#111111";
   const contentInset = isScrolled
     ? "clamp(1rem, 2.6vw, 1.75rem)"
     : "clamp(1.375rem, 4vw, 3.25rem)";
@@ -103,15 +115,6 @@ export default function Navbar() {
     { label: "Profile", href: "/profile" },
     { label: "Notification", href: "/notifications" },
   ];
-
-  useEffect(() => {
-    const rawPath =
-      pathname && pathname.trim().length > 0
-        ? pathname
-        : window.location.pathname;
-
-    setIsHomeRoute(normalizePath(rawPath) === "/");
-  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -226,9 +229,8 @@ export default function Navbar() {
               {/* Logo */}
               <Link href="/" className="flex items-center">
                 <span
-                  className={`text-base font-bold tracking-[0.35em] uppercase select-none transition-colors duration-500 ${
-                    useLightForeground ? "text-white" : "text-black"
-                  }`}
+                  className="text-base font-bold tracking-[0.35em] uppercase select-none transition-colors duration-500"
+                  style={{ color: foregroundColor }}
                 >
                   SPURR
                 </span>
@@ -238,14 +240,13 @@ export default function Navbar() {
               {isOpen ? (
                 <button
                   onClick={() => setIsOpen(false)}
-                  className={`text-2xl p-2 ml-2 lg:ml-4 focus:outline-none transition-colors duration-500 ${
-                    useLightForeground ? "text-white" : "text-black"
-                  }`}
+                  className="text-2xl p-2 ml-2 lg:ml-4 focus:outline-none transition-colors duration-500"
                   style={{
                     border: "none",
                     background: "none",
                     boxShadow: "none",
                     outline: "none",
+                    color: foregroundColor,
                   }}
                   aria-label="Close menu"
                 >
@@ -258,19 +259,16 @@ export default function Navbar() {
                   aria-label="Toggle menu"
                 >
                   <span
-                    className={`block w-5 h-[0.09375rem] transition-all duration-500 ${
-                      useLightForeground ? "bg-white" : "bg-black"
-                    }`}
+                    className="block w-5 h-[0.09375rem] transition-all duration-500"
+                    style={{ backgroundColor: foregroundColor }}
                   />
                   <span
-                    className={`block w-5 h-[0.09375rem] transition-all duration-500 ${
-                      useLightForeground ? "bg-white" : "bg-black"
-                    }`}
+                    className="block w-5 h-[0.09375rem] transition-all duration-500"
+                    style={{ backgroundColor: foregroundColor }}
                   />
                   <span
-                    className={`block w-5 h-[0.09375rem] transition-all duration-500 ${
-                      useLightForeground ? "bg-white" : "bg-black"
-                    }`}
+                    className="block w-5 h-[0.09375rem] transition-all duration-500"
+                    style={{ backgroundColor: foregroundColor }}
                   />
                 </button>
               )}
