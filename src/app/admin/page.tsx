@@ -1,4 +1,4 @@
-import type { RentalStatus } from "@prisma/client";
+import type { CarStatus, RentalStatus } from "@prisma/client";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -15,6 +15,8 @@ const RENTAL_STATUS_VALUES: RentalStatus[] = [
   "CANCELLED",
 ];
 
+const BOOKED_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED", "ACTIVE"];
+
 const RENTAL_STATUS_LABEL: Record<RentalStatus, string> = {
   PENDING: "Awaiting Payment",
   CONFIRMED: "Confirmed",
@@ -23,8 +25,35 @@ const RENTAL_STATUS_LABEL: Record<RentalStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
-export default async function AdminDashboardPage() {
-  const user = await getCurrentUser();
+const CAR_STATUS_LABEL: Record<CarStatus, string> = {
+  AVAILABLE: "Available",
+  BOOKED: "Booked",
+  MAINTENANCE: "Maintenance",
+  INACTIVE: "Inactive",
+};
+
+const STATUS_MESSAGES: Record<string, string> = {
+  "rental-status-saved": "Rental status saved and car availability synchronized.",
+  "queue-processed": "Notification queue processed successfully.",
+};
+
+const ERROR_MESSAGES: Record<string, string> = {
+  "invalid-rental-input": "Invalid rental update request.",
+  "invalid-rental-status": "Invalid rental status value.",
+  "rental-not-found": "Rental was not found.",
+  "rental-status-save-failed": "Failed to save rental status. Please try again.",
+  "queue-process-failed": "Failed to process notification queue.",
+};
+
+type AdminDashboardPageProps = {
+  searchParams: Promise<{ status?: string; error?: string }>;
+};
+
+export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
+  const [user, resolvedSearchParams] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+  ]);
 
   if (!user) {
     redirect("/sign-in?next=/admin");
@@ -35,6 +64,14 @@ export default async function AdminDashboardPage() {
   if (!canAccess) {
     redirect("/profile");
   }
+
+  const statusMessage = resolvedSearchParams.status
+    ? STATUS_MESSAGES[resolvedSearchParams.status] ?? null
+    : null;
+
+  const errorMessage = resolvedSearchParams.error
+    ? ERROR_MESSAGES[resolvedSearchParams.error] ?? null
+    : null;
 
   const [
     totalUsers,
@@ -97,35 +134,114 @@ export default async function AdminDashboardPage() {
     const statusValue = formData.get("status");
 
     if (typeof rentalId !== "string" || typeof statusValue !== "string") {
-      return;
+      redirect("/admin?error=invalid-rental-input");
     }
 
     if (!RENTAL_STATUS_VALUES.includes(statusValue as RentalStatus)) {
-      return;
+      redirect("/admin?error=invalid-rental-status");
     }
 
-    const updatedRental = await prisma.rental.update({
-      where: { id: rentalId },
-      data: { status: statusValue as RentalStatus },
-      include: {
-        user: {
-          select: { id: true },
+    const nextStatus = statusValue as RentalStatus;
+
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      const existingRental = await tx.rental.findUnique({
+        where: { id: rentalId },
+        select: {
+          id: true,
+          status: true,
+          userId: true,
+          carId: true,
+          car: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+            },
+          },
         },
-        car: {
-          select: { name: true },
+      });
+
+      if (!existingRental) {
+        return null;
+      }
+
+      const statusChanged = existingRental.status !== nextStatus;
+
+      const updatedRental = await tx.rental.update({
+        where: { id: rentalId },
+        data: { status: nextStatus },
+        include: {
+          user: {
+            select: { id: true },
+          },
+          car: {
+            select: {
+              name: true,
+              status: true,
+            },
+          },
         },
-      },
+      });
+
+      const canAutoSyncCarStatus =
+        existingRental.car.status === "AVAILABLE" || existingRental.car.status === "BOOKED";
+
+      if (canAutoSyncCarStatus) {
+        let targetCarStatus: CarStatus = existingRental.car.status;
+
+        if (BOOKED_RENTAL_STATUSES.includes(nextStatus)) {
+          targetCarStatus = "BOOKED";
+        } else {
+          const hasOtherBookedRentals = await tx.rental.findFirst({
+            where: {
+              carId: existingRental.carId,
+              id: { not: existingRental.id },
+              status: { in: BOOKED_RENTAL_STATUSES },
+            },
+            select: { id: true },
+          });
+
+          targetCarStatus = hasOtherBookedRentals ? "BOOKED" : "AVAILABLE";
+        }
+
+        if (targetCarStatus !== existingRental.car.status) {
+          await tx.car.update({
+            where: { id: existingRental.carId },
+            data: { status: targetCarStatus },
+          });
+        }
+      }
+
+      return { updatedRental, statusChanged };
+    }).catch((error) => {
+      console.error("updateRentalStatusAction failed:", error);
+      return undefined;
     });
 
-    await notifyRentalStatusChanged({
-      userId: updatedRental.user.id,
-      carName: updatedRental.car.name,
-      statusLabel: RENTAL_STATUS_LABEL[statusValue as RentalStatus],
-    });
+    if (transactionResult === undefined) {
+      redirect("/admin?error=rental-status-save-failed");
+    }
+
+    if (transactionResult === null) {
+      redirect("/admin?error=rental-not-found");
+    }
+
+    const { updatedRental, statusChanged } = transactionResult;
+
+    if (statusChanged) {
+      await notifyRentalStatusChanged({
+        userId: updatedRental.user.id,
+        carName: updatedRental.car.name,
+        statusLabel: RENTAL_STATUS_LABEL[nextStatus],
+      }).catch((error) => {
+        console.error("notifyRentalStatusChanged failed:", error);
+      });
+    }
 
     revalidatePath("/admin");
     revalidatePath("/rentals");
     revalidatePath("/notifications");
+    redirect("/admin?status=rental-status-saved");
   }
 
   async function processQueuedEmailsAction() {
@@ -143,15 +259,35 @@ export default async function AdminDashboardPage() {
       redirect("/profile");
     }
 
-    await dispatchQueuedNotifications(200);
+    const processResult = await dispatchQueuedNotifications(200).catch((error) => {
+      console.error("processQueuedEmailsAction failed:", error);
+      return null;
+    });
+
+    if (!processResult) {
+      redirect("/admin?error=queue-process-failed");
+    }
 
     revalidatePath("/admin");
     revalidatePath("/notifications");
+    redirect("/admin?status=queue-processed");
   }
 
   return (
     <main className="min-h-screen px-6 py-28" style={{ background: "#e8e8e8" }}>
       <section className="mx-auto w-full max-w-7xl rounded-sm border border-black/10 bg-white/90 p-6 shadow-sm md:p-8">
+        {statusMessage ? (
+          <div className="mb-5 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {statusMessage}
+          </div>
+        ) : null}
+
+        {errorMessage ? (
+          <div className="mb-5 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.26em] text-gray-400">Admin</p>
@@ -217,6 +353,9 @@ export default async function AdminDashboardPage() {
                         <p className="mt-1 text-sm text-gray-500">Total: {formatRupiah(rental.totalAmount)}</p>
                         <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-500">
                           Current status: {RENTAL_STATUS_LABEL[rental.status]}
+                        </p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-500">
+                          Car availability: {CAR_STATUS_LABEL[rental.car.status]}
                         </p>
                         <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-500">
                           Payment: {rental.payment?.status ?? "-"}

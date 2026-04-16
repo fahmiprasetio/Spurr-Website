@@ -4,12 +4,38 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
-export default async function WishlistPage() {
-  const user = await getCurrentUser();
+const STATUS_MESSAGES: Record<string, string> = {
+  removed: "Car removed from wishlist.",
+  "already-removed": "Car was already removed from wishlist.",
+};
+
+const ERROR_MESSAGES: Record<string, string> = {
+  "invalid-car": "Invalid car data. Please try again.",
+  "car-not-found": "Car not found.",
+  "remove-failed": "Failed to update wishlist. Please try again.",
+};
+
+type WishlistPageProps = {
+  searchParams: Promise<{ status?: string; error?: string }>;
+};
+
+export default async function WishlistPage({ searchParams }: WishlistPageProps) {
+  const [user, resolvedSearchParams] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+  ]);
 
   if (!user) {
     redirect("/sign-in?next=/wishlist");
   }
+
+  const statusMessage = resolvedSearchParams.status
+    ? STATUS_MESSAGES[resolvedSearchParams.status] ?? null
+    : null;
+
+  const errorMessage = resolvedSearchParams.error
+    ? ERROR_MESSAGES[resolvedSearchParams.error] ?? null
+    : null;
 
   const wishlistItems = await prisma.wishlistItem.findMany({
     where: { userId: user.id },
@@ -25,7 +51,7 @@ export default async function WishlistPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  async function toggleWishlistAction(formData: FormData) {
+  async function removeWishlistAction(formData: FormData) {
     "use server";
 
     const currentUser = await getCurrentUser();
@@ -37,7 +63,7 @@ export default async function WishlistPage() {
     const carId = formData.get("carId");
 
     if (typeof carId !== "string" || !carId.trim()) {
-      return;
+      redirect("/wishlist?error=invalid-car");
     }
 
     const targetCar = await prisma.car.findUnique({
@@ -46,30 +72,43 @@ export default async function WishlistPage() {
     });
 
     if (!targetCar) {
-      return;
+      redirect("/wishlist?error=car-not-found");
     }
 
-    const existing = await prisma.wishlistItem.findUnique({
+    const deleted = await prisma.wishlistItem.deleteMany({
       where: {
-        userId_carId: {
-          userId: currentUser.id,
-          carId,
-        },
+        userId: currentUser.id,
+        carId,
       },
-      select: { id: true },
+    }).catch((error) => {
+      console.error("removeWishlistAction failed:", error);
+      return null;
     });
 
-    if (existing) {
-      await prisma.wishlistItem.delete({ where: { id: existing.id } });
+    if (!deleted) {
+      redirect("/wishlist?error=remove-failed");
     }
 
     revalidatePath("/wishlist");
     revalidatePath("/profile");
+    redirect(`/wishlist?status=${deleted.count > 0 ? "removed" : "already-removed"}`);
   }
 
   return (
     <main className="min-h-screen px-6 py-28" style={{ background: "#e8e8e8" }}>
       <section className="mx-auto w-full max-w-5xl rounded-sm border border-black/10 bg-white/90 p-6 shadow-sm md:p-8">
+        {statusMessage ? (
+          <div className="mb-5 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {statusMessage}
+          </div>
+        ) : null}
+
+        {errorMessage ? (
+          <div className="mb-5 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.26em] text-gray-400">Account</p>
@@ -103,7 +142,7 @@ export default async function WishlistPage() {
                   View Details
                 </Link>
 
-                <form action={toggleWishlistAction}>
+                <form action={removeWishlistAction}>
                   <input type="hidden" name="carId" value={item.car.id} />
                   <button
                     type="submit"
