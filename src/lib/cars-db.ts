@@ -79,9 +79,9 @@ export async function getCarsFromDb(): Promise<Car[]> {
     if (isConnectionIssue) {
       skipDbUntil = Date.now() + DB_RETRY_DELAY_MS;
       console.warn(
-        `[cars-db] Database tidak bisa dijangkau. Menggunakan fallback data lokal selama ${
+        `[cars-db] Database is unreachable. Using local fallback data for ${
           DB_RETRY_DELAY_MS / 1000
-        } detik. Detail: ${errorMessage}`
+        } seconds. Details: ${errorMessage}`
       );
       carsCache = {
         data: fallbackCars,
@@ -91,7 +91,7 @@ export async function getCarsFromDb(): Promise<Car[]> {
     }
 
     console.warn(
-      `[cars-db] Gagal membaca data mobil dari DB. Menggunakan fallback lokal. Detail: ${errorMessage}`
+      `[cars-db] Failed to read car data from DB. Using local fallback. Details: ${errorMessage}`
     );
     carsCache = {
       data: fallbackCars,

@@ -31,8 +31,8 @@ export async function notifyRentalCreated(args: {
   await queueNotification({
     userId: args.userId,
     type: "RENTAL_CREATED",
-    subject: "Rental booking diterima",
-    message: `Booking ${args.carName} untuk periode ${args.startDate.toLocaleDateString("id-ID")} - ${args.endDate.toLocaleDateString("id-ID")} telah dibuat dengan total pembayaran Rp ${args.totalAmount.toLocaleString("id-ID")}.`,
+    subject: "Rental booking received",
+    message: `Your booking for ${args.carName} from ${args.startDate.toLocaleDateString("en-US")} - ${args.endDate.toLocaleDateString("en-US")} has been created with a total payment of Rp ${args.totalAmount.toLocaleString("en-US")}.`,
     metadata: {
       carName: args.carName,
       startDate: args.startDate.toISOString(),
@@ -51,8 +51,8 @@ export async function notifyPaymentReceived(args: {
   await queueNotification({
     userId: args.userId,
     type: "PAYMENT_RECEIVED",
-    subject: "Pembayaran rental berhasil",
-    message: `Pembayaran untuk ${args.carName} sebesar Rp ${args.amount.toLocaleString("id-ID")} berhasil diterima. Referensi: ${args.transactionRef}.`,
+    subject: "Rental payment received",
+    message: `Payment for ${args.carName} of Rp ${args.amount.toLocaleString("en-US")} has been received. Reference: ${args.transactionRef}.`,
     metadata: {
       carName: args.carName,
       amount: args.amount,
@@ -69,8 +69,8 @@ export async function notifyRentalStatusChanged(args: {
   await queueNotification({
     userId: args.userId,
     type: "RENTAL_STATUS_CHANGED",
-    subject: "Status rental diperbarui",
-    message: `Status rental ${args.carName} diperbarui menjadi ${args.statusLabel}.`,
+    subject: "Rental status updated",
+    message: `The rental status for ${args.carName} has been updated to ${args.statusLabel}.`,
     metadata: {
       carName: args.carName,
       statusLabel: args.statusLabel,

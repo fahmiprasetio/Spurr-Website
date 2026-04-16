@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email dan password wajib diisi." },
+        { error: "Email and password are required." },
         { status: 400 }
       );
     }
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     if (!user || !verifyPassword(password, user.passwordHash)) {
       return NextResponse.json(
-        { error: "Email atau password salah." },
+        { error: "Invalid email or password." },
         { status: 401 }
       );
     }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Sign in error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan server saat sign in." },
+      { error: "A server error occurred during sign in." },
       { status: 500 }
     );
   }

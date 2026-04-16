@@ -30,18 +30,18 @@ function isValidImageUrl(value: string): boolean {
 }
 
 const STATUS_MESSAGES: Record<string, string> = {
-  "profile-updated": "Profil berhasil diperbarui.",
-  "password-updated": "Password berhasil diganti.",
+  "profile-updated": "Profile updated successfully.",
+  "password-updated": "Password changed successfully.",
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  "invalid-name": "Username harus 2 sampai 40 karakter.",
-  "invalid-image": "URL foto profil tidak valid.",
-  "password-required": "Semua field password wajib diisi.",
-  "password-length": "Password baru minimal 8 karakter.",
-  "password-mismatch": "Konfirmasi password tidak cocok.",
-  "password-invalid": "Password saat ini salah.",
-  "password-same": "Password baru harus berbeda dari password saat ini.",
+  "invalid-name": "Username must be between 2 and 40 characters.",
+  "invalid-image": "Invalid profile image URL.",
+  "password-required": "All password fields are required.",
+  "password-length": "New password must be at least 8 characters.",
+  "password-mismatch": "Password confirmation does not match.",
+  "password-invalid": "Current password is incorrect.",
+  "password-same": "New password must be different from the current password.",
 };
 
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
@@ -217,17 +217,17 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               )}
 
               <div>
-                <p className="text-base text-black">{user.name || "(belum diisi)"}</p>
+                <p className="text-base text-black">{user.name || "(not set)"}</p>
                 <p className="text-sm text-gray-500">{user.email}</p>
               </div>
             </div>
 
             <div className="mt-6 space-y-3 text-sm text-gray-600">
               <p>
-                Joined: {new Intl.DateTimeFormat("id-ID", { dateStyle: "long" }).format(user.createdAt)}
+                Joined: {new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(user.createdAt)}
               </p>
               <p>Role: {user.role}</p>
-              <p>Total mobil disimpan: {savedCars.length}</p>
+              <p>Total saved cars: {savedCars.length}</p>
             </div>
 
             <div className="mt-8 border-t border-black/10 pt-6">
@@ -237,7 +237,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   href="/wishlist"
                   className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
                 >
-                  Simpan
+                  Saved Cars
                 </Link>
                 <Link
                   href="/rentals"
@@ -274,7 +274,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
           <article className="space-y-6">
             <div className="border border-black/10 bg-white/90 p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-black">Edit Profil</h2>
+              <h2 className="text-xl font-semibold text-black">Edit Profile</h2>
               <form action={updateProfileAction} className="mt-5 space-y-4">
                 <label className="block text-sm text-gray-600">
                   Username
@@ -286,18 +286,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     minLength={2}
                     maxLength={40}
                     className="mt-2 w-full border border-black/20 px-3 py-2 outline-none focus:border-black"
-                    placeholder="Masukkan username"
+                    placeholder="Enter username"
                   />
                 </label>
 
                 <label className="block text-sm text-gray-600">
-                  URL Foto Profil
+                  Profile Image URL
                   <input
                     type="url"
                     name="profileImage"
                     defaultValue={user.profileImage ?? ""}
                     className="mt-2 w-full border border-black/20 px-3 py-2 outline-none focus:border-black"
-                    placeholder="https://example.com/foto.jpg"
+                    placeholder="https://example.com/photo.jpg"
                   />
                 </label>
 
@@ -305,16 +305,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   type="submit"
                   className="border border-black bg-black px-5 py-2 text-xs uppercase tracking-[0.18em] text-white hover:bg-white hover:text-black"
                 >
-                  Simpan Perubahan Profil
+                  Save Profile Changes
                 </button>
               </form>
             </div>
 
             <div className="border border-black/10 bg-white/90 p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-black">Ganti Password</h2>
+              <h2 className="text-xl font-semibold text-black">Change Password</h2>
               <form action={updatePasswordAction} className="mt-5 space-y-4">
                 <label className="block text-sm text-gray-600">
-                  Password Saat Ini
+                  Current Password
                   <input
                     type="password"
                     name="currentPassword"
@@ -324,7 +324,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 </label>
 
                 <label className="block text-sm text-gray-600">
-                  Password Baru
+                  New Password
                   <input
                     type="password"
                     name="newPassword"
@@ -335,7 +335,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 </label>
 
                 <label className="block text-sm text-gray-600">
-                  Konfirmasi Password Baru
+                  Confirm New Password
                   <input
                     type="password"
                     name="confirmPassword"
@@ -349,7 +349,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   type="submit"
                   className="border border-black px-5 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
                 >
-                  Simpan Password Baru
+                  Save New Password
                 </button>
               </form>
             </div>
@@ -358,18 +358,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
         <article className="border border-black/10 bg-white/90 p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold text-black">Mobil Tersimpan</h2>
+            <h2 className="text-xl font-semibold text-black">Saved Cars</h2>
             <Link
               href="/wishlist"
               className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
             >
-              Lihat Semua Simpan
+              View All Saved Cars
             </Link>
           </div>
 
           {savedCars.length === 0 ? (
             <p className="mt-4 border border-dashed border-black/20 bg-white px-4 py-6 text-sm text-gray-500">
-              Anda belum menyimpan mobil apa pun.
+              You have not saved any cars yet.
             </p>
           ) : (
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -384,7 +384,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     href={`/car/${item.car.id}`}
                     className="mt-4 inline-block border border-black/20 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
                   >
-                    Lihat Mobil
+                    View Car
                   </Link>
                 </article>
               ))}

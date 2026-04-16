@@ -7,7 +7,7 @@ export async function PATCH(request: NextRequest) {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
-    return NextResponse.json({ error: "Anda harus sign in terlebih dahulu." }, { status: 401 });
+    return NextResponse.json({ error: "You must sign in first." }, { status: 401 });
   }
 
   const body = (await request.json().catch(() => null)) as
@@ -22,21 +22,21 @@ export async function PATCH(request: NextRequest) {
 
   if (!currentPassword || !newPassword || !confirmPassword) {
     return NextResponse.json(
-      { error: "Semua field password wajib diisi." },
+      { error: "All password fields are required." },
       { status: 400 }
     );
   }
 
   if (newPassword.length < 8) {
     return NextResponse.json(
-      { error: "Password baru minimal 8 karakter." },
+      { error: "New password must be at least 8 characters." },
       { status: 400 }
     );
   }
 
   if (newPassword !== confirmPassword) {
     return NextResponse.json(
-      { error: "Konfirmasi password tidak cocok." },
+      { error: "Password confirmation does not match." },
       { status: 400 }
     );
   }
@@ -48,7 +48,7 @@ export async function PATCH(request: NextRequest) {
 
   if (!user || !verifyPassword(currentPassword, user.passwordHash)) {
     return NextResponse.json(
-      { error: "Password saat ini salah." },
+      { error: "Current password is incorrect." },
       { status: 401 }
     );
   }

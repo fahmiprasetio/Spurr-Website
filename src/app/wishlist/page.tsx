@@ -73,16 +73,16 @@ export default async function WishlistPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.26em] text-gray-400">Account</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black">Simpan</h1>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black">Saved Cars</h1>
             <p className="mt-2 text-sm text-gray-500">
-              Daftar mobil yang sudah Anda simpan untuk dipertimbangkan atau diproses ke rental.
+              Cars you have saved to revisit later or continue to the rental process.
             </p>
           </div>
           <Link
             href="/profile"
             className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.2em] text-black hover:bg-black hover:text-white"
           >
-            Kembali ke Profile
+            Back to Profile
           </Link>
         </div>
 
@@ -100,7 +100,7 @@ export default async function WishlistPage() {
                   href={`/car/${item.car.id}`}
                   className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.2em] text-black transition-colors hover:bg-black hover:text-white"
                 >
-                  Lihat Detail
+                  View Details
                 </Link>
 
                 <form action={toggleWishlistAction}>
@@ -109,7 +109,7 @@ export default async function WishlistPage() {
                     type="submit"
                     className="border border-black px-4 py-2 text-xs uppercase tracking-[0.2em] text-black transition-colors hover:bg-black hover:text-white"
                   >
-                    Hapus
+                    Remove
                   </button>
                 </form>
               </div>
@@ -118,7 +118,7 @@ export default async function WishlistPage() {
 
           {wishlistItems.length === 0 ? (
             <div className="md:col-span-2 border border-dashed border-black/20 bg-white px-4 py-8 text-center">
-              <p className="text-sm text-gray-500">Belum ada mobil yang disimpan.</p>
+              <p className="text-sm text-gray-500">No saved cars yet.</p>
             </div>
           ) : null}
         </div>

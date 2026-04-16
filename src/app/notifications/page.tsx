@@ -4,9 +4,9 @@ import { getCurrentUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
 const STATUS_LABEL: Record<string, string> = {
-  QUEUED: "Dalam antrean",
-  SENT: "Terkirim",
-  FAILED: "Gagal",
+  QUEUED: "Queued",
+  SENT: "Sent",
+  FAILED: "Failed",
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -37,21 +37,21 @@ export default async function NotificationsPage() {
             <p className="text-xs uppercase tracking-[0.26em] text-gray-400">Account</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black">Email Notifications</h1>
             <p className="mt-2 text-sm text-gray-500">
-              Riwayat email otomatis dari booking, pembayaran, dan perubahan status rental.
+              Automatic email history for bookings, payments, and rental status updates.
             </p>
           </div>
           <Link
             href="/profile"
             className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.2em] text-black hover:bg-black hover:text-white"
           >
-            Kembali ke Profile
+            Back to Profile
           </Link>
         </div>
 
         <div className="mt-8 space-y-3">
           {notifications.length === 0 ? (
             <p className="border border-black/10 bg-white p-4 text-sm text-gray-500">
-              Belum ada notifikasi.
+              No notifications yet.
             </p>
           ) : (
             notifications.map((notification) => (
@@ -67,7 +67,7 @@ export default async function NotificationsPage() {
                 <h2 className="mt-2 text-base font-semibold text-black">{notification.subject}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-gray-600">{notification.message}</p>
                 <p className="mt-3 text-xs text-gray-400">
-                  {new Intl.DateTimeFormat("id-ID", {
+                  {new Intl.DateTimeFormat("en-US", {
                     dateStyle: "medium",
                     timeStyle: "short",
                   }).format(notification.createdAt)}

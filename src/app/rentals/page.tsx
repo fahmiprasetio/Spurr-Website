@@ -25,11 +25,11 @@ const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
 ];
 
 const RENTAL_STATUS_LABEL: Record<string, string> = {
-  PENDING: "Menunggu Pembayaran",
-  CONFIRMED: "Terkonfirmasi",
-  ACTIVE: "Sedang Berjalan",
-  COMPLETED: "Selesai",
-  CANCELLED: "Dibatalkan",
+  PENDING: "Awaiting Payment",
+  CONFIRMED: "Confirmed",
+  ACTIVE: "In Progress",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
 };
 
 function parseDateInput(value: string): Date | null {
@@ -226,7 +226,7 @@ export default async function RentalsPage() {
     await notifyRentalStatusChanged({
       userId: currentUser.id,
       carName: rental.car.name,
-      statusLabel: "Terkonfirmasi",
+      statusLabel: "Confirmed",
     });
 
     revalidatePath("/rentals");
@@ -242,29 +242,29 @@ export default async function RentalsPage() {
             <p className="text-xs uppercase tracking-[0.26em] text-gray-400">Account</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black">Rental Management</h1>
             <p className="mt-2 text-sm text-gray-500">
-              Buat booking, lanjutkan pembayaran, dan pantau status rental Anda.
+              Create bookings, continue payments, and track your rental status.
             </p>
           </div>
           <Link
             href="/profile"
             className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.2em] text-black hover:bg-black hover:text-white"
           >
-            Kembali ke Profile
+            Back to Profile
           </Link>
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
           <article className="border border-black/10 bg-white p-5">
-            <h2 className="text-lg font-semibold text-black">Buat Rental Baru</h2>
+            <h2 className="text-lg font-semibold text-black">Create New Rental</h2>
             <form action={createRentalAction} className="mt-5 flex flex-col gap-4">
               <label className="text-sm text-gray-600">
-                Mobil
+                Car
                 <select
                   name="carId"
                   required
                   className="mt-2 w-full border border-black/20 px-3 py-2 outline-none focus:border-black"
                 >
-                  <option value="">Pilih mobil</option>
+                  <option value="">Select a car</option>
                   {cars.map((car) => (
                     <option key={car.id} value={car.id}>
                       {car.brand.name} {car.name}
@@ -296,12 +296,12 @@ export default async function RentalsPage() {
               </div>
 
               <label className="text-sm text-gray-600">
-                Catatan (opsional)
+                Notes (optional)
                 <textarea
                   name="notes"
                   rows={3}
                   className="mt-2 w-full border border-black/20 px-3 py-2 outline-none focus:border-black"
-                  placeholder="Contoh: butuh unit berwarna gelap"
+                  placeholder="Example: prefer a dark-colored unit"
                 />
               </label>
 
@@ -309,22 +309,22 @@ export default async function RentalsPage() {
                 type="submit"
                 className="mt-2 border border-black bg-black px-4 py-3 text-xs uppercase tracking-[0.2em] text-white hover:bg-white hover:text-black"
               >
-                Buat Booking Rental
+                Create Rental Booking
               </button>
             </form>
           </article>
 
           <article className="border border-black/10 bg-white p-5">
-            <h2 className="text-lg font-semibold text-black">Ringkasan Rental</h2>
-            <p className="mt-2 text-sm text-gray-500">Total booking Anda: {rentals.length}</p>
+            <h2 className="text-lg font-semibold text-black">Rental Summary</h2>
+            <p className="mt-2 text-sm text-gray-500">Total bookings: {rentals.length}</p>
             <div className="mt-5 space-y-3">
               {rentals.slice(0, 3).map((rental) => (
                 <div key={rental.id} className="border border-black/10 px-3 py-2">
                   <p className="text-sm font-medium text-black">{rental.car.brand.name} {rental.car.name}</p>
                   <p className="mt-1 text-xs text-gray-500">
-                    {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(rental.startDate)}
+                    {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(rental.startDate)}
                     {" - "}
-                    {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(rental.endDate)}
+                    {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(rental.endDate)}
                   </p>
                   <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-500">
                     {RENTAL_STATUS_LABEL[rental.status] ?? rental.status}
@@ -332,17 +332,17 @@ export default async function RentalsPage() {
                 </div>
               ))}
               {rentals.length === 0 ? (
-                <p className="text-sm text-gray-500">Belum ada booking rental.</p>
+                <p className="text-sm text-gray-500">No rental bookings yet.</p>
               ) : null}
             </div>
           </article>
         </div>
 
         <div className="mt-10 space-y-5">
-          <h2 className="text-xl font-semibold text-black">Daftar Rental Anda</h2>
+          <h2 className="text-xl font-semibold text-black">Your Rentals</h2>
           {rentals.length === 0 ? (
             <p className="border border-black/10 bg-white p-4 text-sm text-gray-500">
-              Anda belum memiliki rental.
+              You do not have any rentals yet.
             </p>
           ) : (
             rentals.map((rental) => (
@@ -352,11 +352,11 @@ export default async function RentalsPage() {
                     <p className="text-xs uppercase tracking-[0.18em] text-gray-400">{rental.car.brand.name}</p>
                     <h3 className="mt-1 text-lg font-semibold text-black">{rental.car.name}</h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(rental.startDate)}
+                      {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(rental.startDate)}
                       {" - "}
-                      {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(rental.endDate)}
+                      {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(rental.endDate)}
                       {" • "}
-                      {rental.totalDays} hari
+                      {rental.totalDays} days
                     </p>
                     <p className="mt-1 text-sm text-gray-500">Total: {formatRupiah(rental.totalAmount)}</p>
                     <p className="mt-2 text-xs uppercase tracking-[0.14em] text-gray-500">
@@ -368,7 +368,7 @@ export default async function RentalsPage() {
                     <form action={payRentalAction} className="w-full max-w-xs space-y-2">
                       <input type="hidden" name="rentalId" value={rental.id} />
                       <label className="block text-xs uppercase tracking-[0.16em] text-gray-500">
-                        Metode Pembayaran
+                        Payment Method
                         <select
                           name="method"
                           required
@@ -386,13 +386,13 @@ export default async function RentalsPage() {
                         type="submit"
                         className="w-full border border-black px-4 py-2 text-xs uppercase tracking-[0.2em] text-black hover:bg-black hover:text-white"
                       >
-                        Bayar Sekarang
+                        Pay Now
                       </button>
                     </form>
                   ) : (
                     <div className="text-right">
                       <p className="text-xs uppercase tracking-[0.14em] text-emerald-600">
-                        Pembayaran selesai
+                        Payment completed
                       </p>
                       {rental.payment ? (
                         <p className="mt-1 text-xs text-gray-500">Ref: {rental.payment.transactionRef}</p>

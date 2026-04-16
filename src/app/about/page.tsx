@@ -7,33 +7,33 @@ const coreValues = [
   {
     title: "Curated Experience",
     description:
-      "Kami memilih mobil berdasarkan karakter, cerita, dan pencapaian teknisnya agar setiap kunjungan terasa berkelas.",
+      "We select each car for its character, story, and technical achievements so every visit feels premium.",
   },
   {
     title: "Interactive Showcase",
     description:
-      "Setiap mobil ditampilkan dengan frame sequence hover sehingga pengguna bisa melihat detail desain secara lebih hidup.",
+      "Each car is presented with hover frame sequences so visitors can explore design details more vividly.",
   },
   {
     title: "Rental Ready",
     description:
-      "Platform ini tidak hanya menampilkan koleksi, tetapi juga dirancang untuk mendukung alur booking dan rental secara nyata.",
+      "This platform does more than showcase a collection. It is also built to support real booking and rental flows.",
   },
 ];
 
 const highlights = [
-  "Collection gallery dengan efek frame animation yang immersive",
-  "Wishlist untuk menyimpan mobil impian pengguna",
-  "Sistem rental dan pembayaran dengan status tracking",
-  "Dashboard admin untuk monitoring operasional",
-  "Riwayat notifikasi email untuk update transaksi",
+  "Collection gallery with immersive frame animation effects",
+  "Wishlist to save favorite and dream cars",
+  "Rental and payment system with status tracking",
+  "Admin dashboard for operational monitoring",
+  "Email notification history for transaction updates",
 ];
 
 const roadmap = [
-  "Penambahan aset mobil baru secara bertahap",
-  "Peningkatan performa untuk perangkat low-end",
-  "Detail analytics untuk melihat minat pengguna per model",
-  "Integrasi peta pickup/drop-off yang lebih fleksibel",
+  "Gradual addition of new car assets",
+  "Performance improvements for low-end devices",
+  "Detailed analytics to measure interest by model",
+  "More flexible pickup/drop-off map integration",
 ];
 
 export default async function AboutPage() {
@@ -51,9 +51,9 @@ export default async function AboutPage() {
             A Digital Home for Exotic and Sport Cars
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-gray-600 md:text-base">
-            SPURR adalah website gallery otomotif modern yang menggabungkan visual eksploratif, informasi mobil premium,
-            dan alur rental yang terstruktur. Tujuan kami adalah menghadirkan pengalaman browsing mobil mewah yang
-            terasa cepat, interaktif, dan mudah digunakan.
+            SPURR is a modern automotive gallery website that combines exploratory visuals, premium vehicle information,
+            and structured rental flows. Our goal is to deliver a luxury car browsing experience that feels fast,
+            interactive, and easy to use.
           </p>
         </header>
 
@@ -113,8 +113,8 @@ export default async function AboutPage() {
         <section className="border border-black/10 bg-black p-6 text-white">
           <h2 className="text-2xl font-semibold tracking-tight">Explore, Save, and Rent</h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/80">
-            Ingin mulai menjelajahi koleksi? Anda bisa langsung menuju halaman car, menyimpan mobil favorit,
-            dan melanjutkan ke proses rental kapan pun siap.
+            Ready to explore the collection? You can head straight to the cars page, save your favorites,
+            and continue to rental whenever you are ready.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link

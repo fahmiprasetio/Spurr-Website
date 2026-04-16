@@ -16,11 +16,11 @@ const RENTAL_STATUS_VALUES: RentalStatus[] = [
 ];
 
 const RENTAL_STATUS_LABEL: Record<RentalStatus, string> = {
-  PENDING: "Menunggu Pembayaran",
-  CONFIRMED: "Terkonfirmasi",
-  ACTIVE: "Sedang Berjalan",
-  COMPLETED: "Selesai",
-  CANCELLED: "Dibatalkan",
+  PENDING: "Awaiting Payment",
+  CONFIRMED: "Confirmed",
+  ACTIVE: "In Progress",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
 };
 
 export default async function AdminDashboardPage() {
@@ -157,14 +157,14 @@ export default async function AdminDashboardPage() {
             <p className="text-xs uppercase tracking-[0.26em] text-gray-400">Admin</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black">Dashboard</h1>
             <p className="mt-2 text-sm text-gray-500">
-              Monitoring rental, pembayaran, dan email notification queue.
+              Monitor rentals, payments, and the email notification queue.
             </p>
           </div>
           <Link
             href="/profile"
             className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.2em] text-black hover:bg-black hover:text-white"
           >
-            Kembali ke Profile
+            Back to Profile
           </Link>
         </div>
 
@@ -196,7 +196,7 @@ export default async function AdminDashboardPage() {
             <div className="space-y-3">
               {recentRentals.length === 0 ? (
                 <p className="border border-black/10 bg-white p-4 text-sm text-gray-500">
-                  Belum ada data rental.
+                  No rental data yet.
                 </p>
               ) : (
                 recentRentals.map((rental) => (
@@ -210,13 +210,13 @@ export default async function AdminDashboardPage() {
                           {rental.car.brand.name} {rental.car.name}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
-                          {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(rental.startDate)}
+                          {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(rental.startDate)}
                           {" - "}
-                          {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(rental.endDate)}
+                          {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(rental.endDate)}
                         </p>
                         <p className="mt-1 text-sm text-gray-500">Total: {formatRupiah(rental.totalAmount)}</p>
                         <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-500">
-                          Status saat ini: {RENTAL_STATUS_LABEL[rental.status]}
+                          Current status: {RENTAL_STATUS_LABEL[rental.status]}
                         </p>
                         <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-500">
                           Payment: {rental.payment?.status ?? "-"}
@@ -226,7 +226,7 @@ export default async function AdminDashboardPage() {
                       <form action={updateRentalStatusAction} className="w-full max-w-xs space-y-2">
                         <input type="hidden" name="rentalId" value={rental.id} />
                         <label className="block text-xs uppercase tracking-[0.16em] text-gray-500">
-                          Ubah Status
+                          Update Status
                           <select
                             name="status"
                             defaultValue={rental.status}
@@ -243,7 +243,7 @@ export default async function AdminDashboardPage() {
                           type="submit"
                           className="w-full border border-black px-4 py-2 text-xs uppercase tracking-[0.2em] text-black hover:bg-black hover:text-white"
                         >
-                          Simpan Status
+                          Save Status
                         </button>
                       </form>
                     </div>
@@ -269,7 +269,7 @@ export default async function AdminDashboardPage() {
             <div className="space-y-3">
               {latestNotifications.length === 0 ? (
                 <p className="border border-black/10 bg-white p-4 text-sm text-gray-500">
-                  Belum ada notifikasi email.
+                  No email notifications yet.
                 </p>
               ) : (
                 latestNotifications.map((item) => (

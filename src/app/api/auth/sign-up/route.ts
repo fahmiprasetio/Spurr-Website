@@ -24,12 +24,12 @@ export async function POST(request: NextRequest) {
     const password = typeof body?.password === "string" ? body.password : "";
 
     if (!isValidEmail(email)) {
-      return NextResponse.json({ error: "Email tidak valid." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
     }
 
     if (password.length < 8) {
       return NextResponse.json(
-        { error: "Password minimal 8 karakter." },
+        { error: "Password must be at least 8 characters." },
         { status: 400 }
       );
     }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "Email sudah terdaftar." },
+        { error: "Email is already registered." },
         { status: 409 }
       );
     }
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Database belum bisa dijangkau. Coba lagi beberapa saat, atau periksa koneksi database.",
+              "Database is currently unreachable. Please try again shortly or verify the database connection.",
             detail: errorMessage,
           },
           { status: 503 }
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Database belum bisa dijangkau. Coba lagi beberapa saat, atau periksa koneksi database.",
+            "Database is currently unreachable. Please try again shortly or verify the database connection.",
         },
         { status: 503 }
       );
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     if (process.env.NODE_ENV !== "production") {
       return NextResponse.json(
         {
-          error: "Terjadi kesalahan server saat sign up.",
+          error: "A server error occurred during sign up.",
           detail: errorMessage,
         },
         { status: 500 }
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Terjadi kesalahan server saat sign up." },
+      { error: "A server error occurred during sign up." },
       { status: 500 }
     );
   }

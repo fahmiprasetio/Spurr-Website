@@ -19,7 +19,7 @@ export async function PATCH(request: NextRequest) {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
-    return NextResponse.json({ error: "Anda harus sign in terlebih dahulu." }, { status: 401 });
+    return NextResponse.json({ error: "You must sign in first." }, { status: 401 });
   }
 
   const body = (await request.json().catch(() => null)) as
@@ -32,14 +32,14 @@ export async function PATCH(request: NextRequest) {
 
   if (name.length < 2 || name.length > 40) {
     return NextResponse.json(
-      { error: "Username harus 2 sampai 40 karakter." },
+      { error: "Username must be between 2 and 40 characters." },
       { status: 400 }
     );
   }
 
   if (!isValidImageUrl(profileImage)) {
     return NextResponse.json(
-      { error: "URL foto profil tidak valid. Gunakan format http atau https." },
+      { error: "Invalid profile image URL. Use http or https format." },
       { status: 400 }
     );
   }

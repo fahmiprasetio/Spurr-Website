@@ -113,7 +113,7 @@ export default function Navbar() {
   const signedInMenuItems = [
     ...publicMenuItems,
     { label: "Profile", href: "/profile" },
-    { label: "Notification", href: "/notifications" },
+    { label: "Notifications", href: "/notifications" },
   ];
 
   useEffect(() => {

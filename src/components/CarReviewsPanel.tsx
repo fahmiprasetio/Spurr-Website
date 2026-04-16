@@ -15,10 +15,10 @@ function formatReviewDate(value: string): string {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "Baru saja";
+    return "Just now";
   }
 
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -42,18 +42,18 @@ export default function CarReviewsPanel({
     event.preventDefault();
 
     if (!isSignedIn) {
-      setErrorMessage("Silakan masuk untuk memberi ulasan.");
+      setErrorMessage("Please sign in to leave a review.");
       return;
     }
 
     const trimmed = comment.trim();
     if (!trimmed) {
-      setErrorMessage("Tulis ulasan singkat terlebih dahulu.");
+      setErrorMessage("Please write a short review first.");
       return;
     }
 
     if (trimmed.length > 600) {
-      setErrorMessage("Ulasan terlalu panjang. Maksimal 600 karakter.");
+      setErrorMessage("Review is too long. Maximum 600 characters.");
       return;
     }
 
@@ -72,14 +72,14 @@ export default function CarReviewsPanel({
         | null;
 
       if (!response.ok || !result?.review) {
-        setErrorMessage(result?.error ?? "Gagal mengirim ulasan. Silakan coba lagi.");
+        setErrorMessage(result?.error ?? "Failed to post review. Please try again.");
         return;
       }
 
       setReviews((previous) => [result.review as CarReviewView, ...previous]);
       setComment("");
     } catch {
-      setErrorMessage("Terjadi kesalahan jaringan. Silakan coba lagi.");
+      setErrorMessage("Network error. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -89,11 +89,11 @@ export default function CarReviewsPanel({
     <article className="border border-black/10 bg-white p-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Ulasan Komunitas</p>
-          <h2 className="mt-1 text-xl font-semibold text-black">Pendapat pengemudi tentang {carName}</h2>
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Community Reviews</p>
+          <h2 className="mt-1 text-xl font-semibold text-black">What drivers said about {carName}</h2>
         </div>
         <p className="text-xs uppercase tracking-[0.14em] text-gray-500">
-          {reviews.length} ulasan
+          {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
         </p>
       </div>
 
@@ -102,7 +102,7 @@ export default function CarReviewsPanel({
           htmlFor={`review-comment-${carId}`}
           className="text-xs uppercase tracking-[0.14em] text-gray-500"
         >
-          Tulis ulasan Anda
+          Add your review
         </label>
         <textarea
           id={`review-comment-${carId}`}
@@ -115,12 +115,12 @@ export default function CarReviewsPanel({
           }}
           maxLength={600}
           rows={4}
-          placeholder="Bagikan pengalaman rental, kualitas layanan, atau kesan berkendara Anda."
+          placeholder="Share your rental experience, service quality, or driving impression."
           className="mt-2 w-full resize-y border border-black/15 px-3 py-2 text-sm text-black outline-none focus:border-black"
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-gray-500">{remainingChars} karakter tersisa</p>
+          <p className="text-xs text-gray-500">{remainingChars} characters left</p>
 
           {isSignedIn ? (
             <button
@@ -128,14 +128,14 @@ export default function CarReviewsPanel({
               disabled={isSubmitting}
               className="border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.16em] text-white hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Mengirim..." : "Kirim Ulasan"}
+              {isSubmitting ? "Posting..." : "Post Review"}
             </button>
           ) : (
             <Link
               href={`/sign-in?next=${encodeURIComponent(`/car/${carId}/comments`)}`}
               className="border border-black px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
             >
-              Masuk untuk mengulas
+              Sign in to review
             </Link>
           )}
         </div>
@@ -146,7 +146,7 @@ export default function CarReviewsPanel({
       <div className="mt-5 space-y-3">
         {reviews.length === 0 ? (
           <p className="border border-dashed border-black/20 px-4 py-5 text-sm text-gray-500">
-            Belum ada ulasan. Jadilah pengemudi pertama yang memberi komentar untuk mobil ini.
+            No reviews yet. Be the first driver to leave a comment for this car.
           </p>
         ) : (
           reviews.map((review) => (
