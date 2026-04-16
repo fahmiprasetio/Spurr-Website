@@ -1,4 +1,4 @@
-import type { PaymentMethod } from "@prisma/client";
+import type { PaymentMethod, RentalStatus } from "@prisma/client";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -24,12 +24,39 @@ const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
   "VIRTUAL_ACCOUNT",
 ];
 
+const ACTIVE_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED", "ACTIVE"];
+
 const RENTAL_STATUS_LABEL: Record<string, string> = {
   PENDING: "Awaiting Payment",
   CONFIRMED: "Confirmed",
   ACTIVE: "In Progress",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
+};
+
+const STATUS_MESSAGES: Record<string, string> = {
+  "rental-created": "Rental booking created successfully.",
+  "payment-completed": "Payment completed successfully.",
+  "payment-already-paid": "This rental has already been paid.",
+};
+
+const ERROR_MESSAGES: Record<string, string> = {
+  "invalid-input": "Invalid input. Please check your form and try again.",
+  "invalid-date-range": "End date must be the same as or later than the start date.",
+  "start-date-past": "Start date cannot be in the past.",
+  "notes-too-long": "Notes are too long. Maximum 500 characters.",
+  "car-not-found": "Selected car was not found.",
+  "car-unavailable": "Selected car is not available for the chosen dates.",
+  "rental-create-failed": "Unable to create rental at the moment. Please try again.",
+  "invalid-payment-input": "Invalid payment request.",
+  "invalid-payment-method": "Invalid payment method.",
+  "rental-not-found": "Rental record was not found.",
+  "payment-not-allowed": "Payment is not allowed for this rental status.",
+  "payment-failed": "Payment processing failed. Please try again.",
+};
+
+type RentalsPageProps = {
+  searchParams: Promise<{ status?: string; error?: string }>;
 };
 
 function parseDateInput(value: string): Date | null {
@@ -46,12 +73,25 @@ function parseDateInput(value: string): Date | null {
   return date;
 }
 
-export default async function RentalsPage() {
-  const user = await getCurrentUser();
+export default async function RentalsPage({ searchParams }: RentalsPageProps) {
+  const [user, resolvedSearchParams] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+  ]);
 
   if (!user) {
     redirect("/sign-in?next=/rentals");
   }
+
+  const statusMessage = resolvedSearchParams.status
+    ? STATUS_MESSAGES[resolvedSearchParams.status] ?? null
+    : null;
+
+  const errorMessage = resolvedSearchParams.error
+    ? ERROR_MESSAGES[resolvedSearchParams.error] ?? null
+    : null;
+
+  const todayMinDate = new Date().toISOString().slice(0, 10);
 
   const [cars, rentals] = await Promise.all([
     prisma.car.findMany({
@@ -90,14 +130,26 @@ export default async function RentalsPage() {
       typeof startDateValue !== "string" ||
       typeof endDateValue !== "string"
     ) {
-      return;
+      redirect("/rentals?error=invalid-input");
     }
 
     const startDate = parseDateInput(startDateValue);
     const endDate = parseDateInput(endDateValue);
+    const notes = typeof notesValue === "string" ? notesValue.trim() : "";
 
     if (!startDate || !endDate || endDate < startDate) {
-      return;
+      redirect("/rentals?error=invalid-date-range");
+    }
+
+    const todayUtc = new Date();
+    todayUtc.setUTCHours(0, 0, 0, 0);
+
+    if (startDate < todayUtc) {
+      redirect("/rentals?error=start-date-past");
+    }
+
+    if (notes.length > 500) {
+      redirect("/rentals?error=notes-too-long");
     }
 
     const car = await prisma.car.findUnique({
@@ -106,19 +158,37 @@ export default async function RentalsPage() {
         id: true,
         name: true,
         power: true,
+        status: true,
       },
     });
 
     if (!car) {
-      return;
+      redirect("/rentals?error=car-not-found");
+    }
+
+    if (car.status === "INACTIVE" || car.status === "MAINTENANCE") {
+      redirect("/rentals?error=car-unavailable");
+    }
+
+    const overlappingRental = await prisma.rental.findFirst({
+      where: {
+        carId: car.id,
+        status: { in: ACTIVE_RENTAL_STATUSES },
+        startDate: { lte: endDate },
+        endDate: { gte: startDate },
+      },
+      select: { id: true },
+    });
+
+    if (overlappingRental) {
+      redirect("/rentals?error=car-unavailable");
     }
 
     const totalDays = calculateRentalDays(startDate, endDate);
     const dailyRate = calculateDailyRate(car.power);
     const totalAmount = totalDays * dailyRate;
-    const notes = typeof notesValue === "string" ? notesValue.trim() : "";
 
-    const { rental, payment } = await prisma.$transaction(async (tx) => {
+    const transactionResult = await prisma.$transaction(async (tx) => {
       const createdRental = await tx.rental.create({
         data: {
           userId: currentUser.id,
@@ -144,19 +214,33 @@ export default async function RentalsPage() {
       });
 
       return { rental: createdRental, payment: createdPayment };
+    }).catch((error) => {
+      console.error("createRentalAction failed:", error);
+      return null;
     });
 
-    await notifyRentalCreated({
-      userId: currentUser.id,
-      carName: car.name,
-      startDate: rental.startDate,
-      endDate: rental.endDate,
-      totalAmount: payment.amount,
-    });
+    if (!transactionResult) {
+      redirect("/rentals?error=rental-create-failed");
+    }
+
+    const { rental, payment } = transactionResult;
+
+    try {
+      await notifyRentalCreated({
+        userId: currentUser.id,
+        carName: car.name,
+        startDate: rental.startDate,
+        endDate: rental.endDate,
+        totalAmount: payment.amount,
+      });
+    } catch (error) {
+      console.error("notifyRentalCreated failed:", error);
+    }
 
     revalidatePath("/rentals");
     revalidatePath("/notifications");
     revalidatePath("/admin");
+    redirect("/rentals?status=rental-created");
   }
 
   async function payRentalAction(formData: FormData) {
@@ -172,11 +256,11 @@ export default async function RentalsPage() {
     const methodValue = formData.get("method");
 
     if (typeof rentalId !== "string" || typeof methodValue !== "string") {
-      return;
+      redirect("/rentals?error=invalid-payment-input");
     }
 
     if (!PAYMENT_METHOD_VALUES.includes(methodValue as PaymentMethod)) {
-      return;
+      redirect("/rentals?error=invalid-payment-method");
     }
 
     const rental = await prisma.rental.findFirst({
@@ -193,50 +277,84 @@ export default async function RentalsPage() {
     });
 
     if (!rental || !rental.payment) {
-      return;
+      redirect("/rentals?error=rental-not-found");
+    }
+
+    if (rental.status === "CANCELLED" || rental.status === "COMPLETED") {
+      redirect("/rentals?error=payment-not-allowed");
     }
 
     if (rental.payment.status === "PAID") {
-      return;
+      redirect("/rentals?status=payment-already-paid");
     }
 
     const paidAt = new Date();
 
-    const payment = await prisma.payment.update({
-      where: { id: rental.payment.id },
-      data: {
-        method: methodValue as PaymentMethod,
-        status: "PAID",
-        paidAt,
-      },
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      const updatedPayment = await tx.payment.update({
+        where: { id: rental.payment!.id },
+        data: {
+          method: methodValue as PaymentMethod,
+          status: "PAID",
+          paidAt,
+        },
+      });
+
+      await tx.rental.update({
+        where: { id: rental.id },
+        data: { status: "CONFIRMED" },
+      });
+
+      return { payment: updatedPayment };
+    }).catch((error) => {
+      console.error("payRentalAction failed:", error);
+      return null;
     });
 
-    await prisma.rental.update({
-      where: { id: rental.id },
-      data: { status: "CONFIRMED" },
-    });
+    if (!transactionResult) {
+      redirect("/rentals?error=payment-failed");
+    }
 
-    await notifyPaymentReceived({
-      userId: currentUser.id,
-      carName: rental.car.name,
-      amount: payment.amount,
-      transactionRef: payment.transactionRef,
-    });
+    const { payment } = transactionResult;
 
-    await notifyRentalStatusChanged({
-      userId: currentUser.id,
-      carName: rental.car.name,
-      statusLabel: "Confirmed",
-    });
+    try {
+      await notifyPaymentReceived({
+        userId: currentUser.id,
+        carName: rental.car.name,
+        amount: payment.amount,
+        transactionRef: payment.transactionRef,
+      });
+
+      await notifyRentalStatusChanged({
+        userId: currentUser.id,
+        carName: rental.car.name,
+        statusLabel: "Confirmed",
+      });
+    } catch (error) {
+      console.error("payment notifications failed:", error);
+    }
 
     revalidatePath("/rentals");
     revalidatePath("/notifications");
     revalidatePath("/admin");
+    redirect("/rentals?status=payment-completed");
   }
 
   return (
     <main className="min-h-screen px-6 py-28" style={{ background: "#e8e8e8" }}>
       <section className="mx-auto w-full max-w-6xl rounded-sm border border-black/10 bg-white/90 p-6 shadow-sm md:p-8">
+        {statusMessage ? (
+          <div className="mb-5 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {statusMessage}
+          </div>
+        ) : null}
+
+        {errorMessage ? (
+          <div className="mb-5 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.26em] text-gray-400">Account</p>
@@ -280,6 +398,7 @@ export default async function RentalsPage() {
                     type="date"
                     name="startDate"
                     required
+                    min={todayMinDate}
                     className="mt-2 w-full border border-black/20 px-3 py-2 outline-none focus:border-black"
                   />
                 </label>
@@ -290,6 +409,7 @@ export default async function RentalsPage() {
                     type="date"
                     name="endDate"
                     required
+                    min={todayMinDate}
                     className="mt-2 w-full border border-black/20 px-3 py-2 outline-none focus:border-black"
                   />
                 </label>
@@ -300,6 +420,7 @@ export default async function RentalsPage() {
                 <textarea
                   name="notes"
                   rows={3}
+                  maxLength={500}
                   className="mt-2 w-full border border-black/20 px-3 py-2 outline-none focus:border-black"
                   placeholder="Example: prefer a dark-colored unit"
                 />
@@ -364,7 +485,10 @@ export default async function RentalsPage() {
                     </p>
                   </div>
 
-                  {rental.payment && rental.payment.status !== "PAID" ? (
+                  {rental.payment &&
+                  rental.payment.status !== "PAID" &&
+                  rental.status !== "CANCELLED" &&
+                  rental.status !== "COMPLETED" ? (
                     <form action={payRentalAction} className="w-full max-w-xs space-y-2">
                       <input type="hidden" name="rentalId" value={rental.id} />
                       <label className="block text-xs uppercase tracking-[0.16em] text-gray-500">
@@ -391,9 +515,15 @@ export default async function RentalsPage() {
                     </form>
                   ) : (
                     <div className="text-right">
-                      <p className="text-xs uppercase tracking-[0.14em] text-emerald-600">
-                        Payment completed
-                      </p>
+                      {rental.payment?.status === "PAID" ? (
+                        <p className="text-xs uppercase tracking-[0.14em] text-emerald-600">
+                          Payment completed
+                        </p>
+                      ) : (
+                        <p className="text-xs uppercase tracking-[0.14em] text-gray-500">
+                          Payment not available
+                        </p>
+                      )}
                       {rental.payment ? (
                         <p className="mt-1 text-xs text-gray-500">Ref: {rental.payment.transactionRef}</p>
                       ) : null}
