@@ -37,7 +37,7 @@ export default function SignInPage() {
       };
 
       if (!response.ok) {
-        setError(result.error ?? "Gagal sign in.");
+        setError(result.error ?? "Gagal masuk ke akun.");
         return;
       }
 
@@ -53,7 +53,7 @@ export default function SignInPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-28" style={{ background: "#e8e8e8" }}>
       <section className="w-full max-w-md border border-black/10 bg-white/90 shadow-sm" style={{ padding: "2rem" }}>
-        <h1 className="text-2xl font-semibold tracking-tight text-black">Welcome Back</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-black">Selamat Datang Kembali</h1>
         <p className="text-sm text-gray-500 mt-2">Masuk ke akun Anda untuk melanjutkan.</p>
 
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
@@ -88,14 +88,14 @@ export default function SignInPage() {
             disabled={loading}
             className="mt-2 bg-black text-white py-3 uppercase tracking-[0.18em] text-sm disabled:opacity-60"
           >
-            {loading ? "Signing In..." : "Sign In"}
+            {loading ? "Sedang masuk..." : "Masuk"}
           </button>
         </form>
 
         <p className="text-sm text-gray-500 mt-6">
           Belum punya akun?{" "}
           <Link href="/sign-up" className="text-black underline underline-offset-4">
-            Sign Up
+            Daftar
           </Link>
         </p>
       </section>
