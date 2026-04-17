@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 
 const SCROLL_THRESHOLD = 8;
 const NAVBAR_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+const AUTH_STATE_CHANGED_EVENT = "spurr:auth-changed";
 
 function NavMenuItem({
   label,
@@ -87,6 +88,7 @@ export default function Navbar() {
   const [authLoading, setAuthLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [authRefreshTick, setAuthRefreshTick] = useState(0);
 
   const fallbackPath = typeof window !== "undefined" ? window.location.pathname : "/";
   const normalizedPath = normalizePath(pathname || fallbackPath);
@@ -160,12 +162,24 @@ export default function Navbar() {
     return () => {
       isMounted = false;
     };
-  }, [pathname]);
+  }, [pathname, authRefreshTick]);
+
+  useEffect(() => {
+    const handleAuthStateChanged = () => {
+      setAuthRefreshTick((value) => value + 1);
+    };
+
+    window.addEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthStateChanged);
+    return () => {
+      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthStateChanged);
+    };
+  }, []);
 
   async function handleSignOut() {
     setSigningOut(true);
     try {
       await fetch("/api/auth/sign-out", { method: "POST" });
+      window.dispatchEvent(new Event(AUTH_STATE_CHANGED_EVENT));
       setCurrentUser(null);
       setIsOpen(false);
       router.replace("/");

@@ -4,12 +4,19 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
+const AUTH_STATE_CHANGED_EVENT = "spurr:auth-changed";
+
 export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = useMemo(() => {
     const fromQuery = searchParams?.get("next");
-    if (!fromQuery || !fromQuery.startsWith("/")) {
+    if (
+      !fromQuery ||
+      !fromQuery.startsWith("/") ||
+      fromQuery.startsWith("//") ||
+      fromQuery.includes("\\")
+    ) {
       return "/";
     }
     return fromQuery;
@@ -41,6 +48,7 @@ export default function SignInPage() {
         return;
       }
 
+      window.dispatchEvent(new Event(AUTH_STATE_CHANGED_EVENT));
       router.push(nextPath);
       router.refresh();
     } catch {

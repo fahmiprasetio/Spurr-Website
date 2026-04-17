@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+const AUTH_STATE_CHANGED_EVENT = "spurr:auth-changed";
+
 export default function SignUpPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -45,7 +47,8 @@ export default function SignUpPage() {
         return;
       }
 
-      router.push("/profile");
+      window.dispatchEvent(new Event(AUTH_STATE_CHANGED_EVENT));
+      router.push("/");
       router.refresh();
     } catch {
       setError("A network error occurred.");
