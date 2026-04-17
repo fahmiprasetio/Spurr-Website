@@ -1,4 +1,4 @@
-import type { PaymentMethod, RentalStatus } from "@prisma/client";
+import { Prisma, type PaymentMethod, type RentalStatus } from "@prisma/client";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -71,6 +71,25 @@ function parseDateInput(value: string): Date | null {
   }
 
   return date;
+}
+
+function isRentalOverlapConstraintError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    const meta = JSON.stringify(error.meta ?? {});
+    return (
+      meta.includes("Rental_no_overlap_active_status_excl") ||
+      error.message.includes("Rental_no_overlap_active_status_excl")
+    );
+  }
+
+  if (error instanceof Error) {
+    return (
+      error.message.includes("Rental_no_overlap_active_status_excl") ||
+      error.message.includes("conflicting key value violates exclusion constraint")
+    );
+  }
+
+  return false;
 }
 
 export default async function RentalsPage({ searchParams }: RentalsPageProps) {
@@ -213,13 +232,21 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
         },
       });
 
-      return { rental: createdRental, payment: createdPayment };
+      return { ok: true as const, rental: createdRental, payment: createdPayment };
     }).catch((error) => {
+      if (isRentalOverlapConstraintError(error)) {
+        return { ok: false as const, reason: "overlap" as const };
+      }
+
       console.error("createRentalAction failed:", error);
-      return null;
+      return { ok: false as const, reason: "unknown" as const };
     });
 
-    if (!transactionResult) {
+    if (!transactionResult.ok) {
+      if (transactionResult.reason === "overlap") {
+        redirect("/rentals?error=car-unavailable");
+      }
+
       redirect("/rentals?error=rental-create-failed");
     }
 

@@ -1,4 +1,5 @@
-import type { CarStatus, RentalStatus } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { Prisma, type CarStatus, type RentalStatus } from "@prisma/client";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -49,6 +50,18 @@ type AdminDashboardPageProps = {
   searchParams: Promise<{ status?: string; error?: string }>;
 };
 
+type RentalStatusAuditRow = {
+  id: string;
+  rentalId: string;
+  carName: string;
+  brandName: string;
+  changedByName: string | null;
+  changedByEmail: string;
+  fromStatus: RentalStatus;
+  toStatus: RentalStatus;
+  changedAt: Date;
+};
+
 export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
   const [user, resolvedSearchParams] = await Promise.all([
     getCurrentUser(),
@@ -80,6 +93,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     queuedNotifications,
     recentRentals,
     latestNotifications,
+    rentalStatusAuditLogs,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.rental.count(),
@@ -112,6 +126,27 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           },
         },
       },
+    }),
+    prisma.$queryRaw<RentalStatusAuditRow[]>(Prisma.sql`
+      SELECT
+        log."id",
+        log."rentalId",
+        car."name" AS "carName",
+        brand."name" AS "brandName",
+        admin."name" AS "changedByName",
+        admin."email" AS "changedByEmail",
+        log."fromStatus",
+        log."toStatus",
+        log."changedAt"
+      FROM "AdminRentalStatusLog" log
+      JOIN "Car" car ON car."id" = log."carId"
+      JOIN "Brand" brand ON brand."id" = car."brandId"
+      JOIN "User" admin ON admin."id" = log."changedByUserId"
+      ORDER BY log."changedAt" DESC
+      LIMIT 20
+    `).catch((error) => {
+      console.error("load audit logs failed:", error);
+      return [];
     }),
   ]);
 
@@ -210,6 +245,17 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             data: { status: targetCarStatus },
           });
         }
+      }
+
+      if (statusChanged) {
+        await tx.$executeRaw(
+          Prisma.sql`
+            INSERT INTO "AdminRentalStatusLog"
+              ("id", "rentalId", "carId", "changedByUserId", "fromStatus", "toStatus", "changedAt")
+            VALUES
+              (${randomUUID()}, ${existingRental.id}, ${existingRental.carId}, ${currentUser.id}, ${existingRental.status}, ${nextStatus}, NOW())
+          `
+        );
       }
 
       return { updatedRental, statusChanged };
@@ -426,6 +472,50 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             </div>
           </section>
         </div>
+
+        <section className="mt-10">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Traceability</p>
+              <h2 className="mt-1 text-xl font-semibold text-black">Rental Status Audit Trail</h2>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {rentalStatusAuditLogs.length === 0 ? (
+              <p className="border border-black/10 bg-white p-4 text-sm text-gray-500">
+                No audit entries yet.
+              </p>
+            ) : (
+              rentalStatusAuditLogs.map((log) => (
+                <article key={log.id} className="border border-black/10 bg-white p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500">
+                      {log.brandName} {log.carName}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {new Intl.DateTimeFormat("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(log.changedAt)}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-700">
+                    {RENTAL_STATUS_LABEL[log.fromStatus] ?? log.fromStatus}
+                    {" → "}
+                    {RENTAL_STATUS_LABEL[log.toStatus] ?? log.toStatus}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-500">
+                    Admin: {log.changedByName?.trim() || log.changedByEmail}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-500">
+                    Rental ID: {log.rentalId}
+                  </p>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
       </section>
     </main>
   );

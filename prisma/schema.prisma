@@ -84,6 +84,7 @@ model Car {
   brandId        Int
   brand          Brand     @relation(fields: [brandId], references: [id], onDelete: Restrict)
   rentals        Rental[]
+  rentalStatusLogs AdminRentalStatusLog[]
   reviews        CarReview[]
   wishlistItems  WishlistItem[]
   createdAt      DateTime  @default(now())
@@ -104,6 +105,7 @@ model User {
   rentals      Rental[]
   payments     Payment[]
   reviews      CarReview[]
+  rentalStatusLogsChanged AdminRentalStatusLog[]
   wishlistItems WishlistItem[]
   notifications EmailNotification[]
   createdAt    DateTime  @default(now())
@@ -163,12 +165,33 @@ model Rental {
   status     RentalStatus @default(PENDING)
   notes      String?
   payment    Payment?
+  statusLogs AdminRentalStatusLog[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
   @@index([userId])
   @@index([carId])
   @@index([status])
+}
+
+model AdminRentalStatusLog {
+  id              String       @id @default(cuid())
+  rentalId        String
+  carId           String
+  changedByUserId String
+  fromStatus      RentalStatus
+  toStatus        RentalStatus
+  note            String?
+  changedAt       DateTime     @default(now())
+
+  rental          Rental       @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  car             Car          @relation(fields: [carId], references: [id], onDelete: Restrict)
+  changedByUser   User         @relation(fields: [changedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([rentalId])
+  @@index([carId])
+  @@index([changedByUserId])
+  @@index([changedAt])
 }
 
 model Payment {
