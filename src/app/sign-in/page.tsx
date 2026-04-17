@@ -10,7 +10,7 @@ export default function SignInPage() {
   const nextPath = useMemo(() => {
     const fromQuery = searchParams?.get("next");
     if (!fromQuery || !fromQuery.startsWith("/")) {
-      return "/profile";
+      return "/";
     }
     return fromQuery;
   }, [searchParams]);

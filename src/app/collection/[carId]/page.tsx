@@ -108,36 +108,11 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
   });
 
   return (
-    <main className="min-h-screen bg-white pt-28">
+    <main className="min-h-screen bg-white pt-20">
       <section className="w-full min-h-[calc(100vh-7rem)] bg-white">
         <div className="mx-auto w-full max-w-7xl space-y-8 px-6 pb-10 md:px-8 md:pb-12">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/car"
-            className="inline-flex items-center gap-2 border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-black hover:bg-black hover:text-white"
-          >
-            <span>←</span>
-            <span>Back to Cars</span>
-          </Link>
-
-          <Link
-            href={rentHref}
-            className="inline-flex items-center gap-2 border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.18em] text-white hover:bg-white hover:text-black"
-          >
-            Rent This Car
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
-          <article className="overflow-hidden border border-black/10 bg-[#efefef]">
-            <div className="relative border-b border-black/10 px-5 py-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-gray-500">{car.brand}</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black md:text-4xl">
-                {car.name}
-              </h1>
-              <p className="mt-2 text-sm text-gray-500">Model year {car.year}</p>
-            </div>
-
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.3fr_1fr]">
+          <article className="overflow-hidden border border-black/10 bg-white">
             {heroImage ? (
               <img
                 src={heroImage}
@@ -146,7 +121,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
                 loading="eager"
                 decoding="async"
                 draggable={false}
-                style={{ backgroundColor: "#e8e8e8" }}
+                style={{ backgroundColor: "#ffffff" }}
               />
             ) : (
               <div className="flex aspect-8/3 items-center justify-center text-xs uppercase tracking-[0.18em] text-gray-400">
@@ -156,7 +131,26 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
           </article>
 
           <article className="border border-black/10 bg-white p-5">
-            <h2 className="text-lg font-semibold text-black">Vehicle Overview</h2>
+            <div className="border-b border-black/10 pb-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-gray-500">{car.brand}</p>
+                  <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black md:text-4xl">
+                    {car.name}
+                  </h1>
+                  <p className="mt-2 text-sm text-gray-500">Model year {car.year}</p>
+                </div>
+                <Link
+                  href="/car"
+                  className="inline-flex items-center gap-2 border border-black/20 px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
+                >
+                  <span>←</span>
+                  <span>Back to Cars</span>
+                </Link>
+              </div>
+            </div>
+
+            <h2 className="mt-5 text-lg font-semibold text-black">Vehicle Overview</h2>
             <p className="mt-3 text-sm leading-relaxed text-gray-600">{car.description}</p>
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">

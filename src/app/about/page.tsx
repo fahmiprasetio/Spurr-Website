@@ -21,21 +21,6 @@ const coreValues = [
   },
 ];
 
-const highlights = [
-  "Collection gallery with immersive frame animation effects",
-  "Wishlist to save favorite and dream cars",
-  "Rental and payment system with status tracking",
-  "Admin dashboard for operational monitoring",
-  "Email notification history for transaction updates",
-];
-
-const roadmap = [
-  "Gradual addition of new car assets",
-  "Performance improvements for low-end devices",
-  "Detailed analytics to measure interest by model",
-  "More flexible pickup/drop-off map integration",
-];
-
 export default async function AboutPage() {
   const cars = await getCarsFromDb();
   const brandCount = new Set(cars.map((car) => car.brand)).size;
@@ -82,32 +67,6 @@ export default async function AboutPage() {
               </article>
             ))}
           </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <article className="border border-black/10 bg-white p-5">
-            <h2 className="text-xl font-semibold tracking-tight text-black">Current Feature Highlights</h2>
-            <ul className="mt-4 space-y-2 text-sm text-gray-600">
-              {highlights.map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-black" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </article>
-
-          <article className="border border-black/10 bg-white p-5">
-            <h2 className="text-xl font-semibold tracking-tight text-black">Next Improvements</h2>
-            <ul className="mt-4 space-y-2 text-sm text-gray-600">
-              {roadmap.map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-black" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </article>
         </section>
 
         <section className="border border-black/10 bg-black p-6 text-white">

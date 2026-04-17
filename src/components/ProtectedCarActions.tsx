@@ -111,9 +111,50 @@ export default function ProtectedCarActions({
           type="button"
           onClick={handleSaveClick}
           disabled={isSaving}
-          className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+          aria-label={inWishlist ? "Remove saved car" : "Save car"}
+          aria-pressed={inWishlist}
+          title={inWishlist ? "Remove saved car" : "Save car"}
+          className={`inline-flex h-10 w-10 items-center justify-center border transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+            inWishlist
+              ? "border-black bg-black text-white"
+              : "border-black/20 bg-white text-black hover:border-black hover:bg-black hover:text-white"
+          }`}
         >
-          {isSaving ? inWishlist ? "Removing..." : "Saving..." : inWishlist ? "Remove Saved" : "Save Car"}
+          {isSaving ? (
+            <svg
+              className="h-4 w-4 animate-spin"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                opacity="0.3"
+              />
+              <path
+                d="M12 3a9 9 0 0 1 9 9"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+              />
+            </svg>
+          ) : (
+            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"
+                fill={inWishlist ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+          <span className="sr-only">{inWishlist ? "Remove saved car" : "Save car"}</span>
         </button>
       </div>
 

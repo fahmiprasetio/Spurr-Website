@@ -131,6 +131,10 @@ export default function Navbar() {
     let isMounted = true;
 
     async function loadAuthState() {
+      if (isMounted) {
+        setAuthLoading(true);
+      }
+
       try {
         const response = await fetch("/api/auth/me", { cache: "no-store" });
         const result = (await response.json().catch(() => ({}))) as {
@@ -156,7 +160,7 @@ export default function Navbar() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [pathname]);
 
   async function handleSignOut() {
     setSigningOut(true);
