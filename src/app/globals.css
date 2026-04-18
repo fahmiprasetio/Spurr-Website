@@ -93,3 +93,28 @@ html {
   background: #0a0a0a;
   color: #ffffff;
 }
+
+.showroom-map {
+  min-width: 0;
+}
+
+.showroom-map .leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #f3f4f6;
+}
+
+.showroom-map-marker {
+  background: transparent;
+  border: 0;
+}
+
+.showroom-map-marker-dot {
+  display: block;
+  height: 1.375rem;
+  width: 1.375rem;
+  border-radius: 9999px;
+  border: 3px solid #ffffff;
+  background: #83d24a;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.25);
+}

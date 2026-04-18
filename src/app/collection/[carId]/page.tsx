@@ -1,8 +1,12 @@
+import { readdir } from "node:fs/promises";
+import path from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { framesMap } from "@/data/frames";
+import CarImageCarousel, { type CarCarouselImage } from "@/components/CarImageCarousel";
 import ProtectedCarActions from "@/components/ProtectedCarActions";
 import CarReviewsPanel from "@/components/CarReviewsPanel";
+import ShowroomMap from "@/components/ShowroomMapClient";
 import { getCurrentUser } from "@/lib/auth-server";
 import { getCarsFromDb } from "@/lib/cars-db";
 import { prisma } from "@/lib/prisma";
@@ -19,14 +23,85 @@ const SHOWROOM_LOCATION = {
   longitude: 106.809844,
 };
 
-function buildOpenStreetMapEmbedUrl(latitude: number, longitude: number): string {
-  const west = (longitude - 0.018).toFixed(6);
-  const south = (latitude - 0.01).toFixed(6);
-  const east = (longitude + 0.018).toFixed(6);
-  const north = (latitude + 0.01).toFixed(6);
-  const marker = `${latitude.toFixed(6)}%2C${longitude.toFixed(6)}`;
+const BASED_IMAGE_DIRECTORY = path.join(process.cwd(), "public", "car-image(based)");
+const SUPPORTED_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "avif"] as const;
+const GALLERY_VIEW_ORDER = [
+  { suffix: "", label: "Side" },
+  { suffix: " front", label: "Front" },
+  { suffix: " 45 degree", label: "45 Degree" },
+  { suffix: " back", label: "Rear" },
+] as const;
 
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${west}%2C${south}%2C${east}%2C${north}&layer=mapnik&marker=${marker}`;
+function stripImageExtension(fileName: string): string {
+  return fileName.replace(/\.[^/.]+$/, "").trim();
+}
+
+function buildPublicBaseImagePath(fileName: string): string {
+  return `/car-image(based)/${encodeURIComponent(fileName)}`;
+}
+
+async function resolveDirectionalGalleryImages(
+  carName: string,
+  baseImage?: string
+): Promise<CarCarouselImage[]> {
+  let availableFileNames: string[] = [];
+
+  try {
+    availableFileNames = await readdir(BASED_IMAGE_DIRECTORY);
+  } catch {
+    return [];
+  }
+
+  if (availableFileNames.length === 0) {
+    return [];
+  }
+
+  const fileNameLookup = new Map(
+    availableFileNames.map((fileName) => [fileName.toLowerCase(), fileName])
+  );
+
+  const stemCandidates = Array.from(
+    new Set(
+      [carName.trim(), baseImage ? stripImageExtension(baseImage) : ""].filter(
+        (value) => value.length > 0
+      )
+    )
+  );
+
+  const foundImages: CarCarouselImage[] = [];
+  const seenFileKeys = new Set<string>();
+
+  for (const stem of stemCandidates) {
+    for (const view of GALLERY_VIEW_ORDER) {
+      let matchedFileName: string | null = null;
+
+      for (const extension of SUPPORTED_IMAGE_EXTENSIONS) {
+        const lookupKey = `${stem}${view.suffix}.${extension}`.toLowerCase();
+        const fileName = fileNameLookup.get(lookupKey);
+        if (fileName) {
+          matchedFileName = fileName;
+          break;
+        }
+      }
+
+      if (!matchedFileName) {
+        continue;
+      }
+
+      const fileKey = matchedFileName.toLowerCase();
+      if (seenFileKeys.has(fileKey)) {
+        continue;
+      }
+
+      seenFileKeys.add(fileKey);
+      foundImages.push({
+        src: buildPublicBaseImagePath(matchedFileName),
+        label: view.label,
+      });
+    }
+  }
+
+  return foundImages;
 }
 
 function buildOpenStreetMapViewUrl(latitude: number, longitude: number): string {
@@ -52,15 +127,18 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
       : car.baseImage
       ? `/car-image(based)/${car.baseImage}`
       : null;
+  const directionalGalleryImages = await resolveDirectionalGalleryImages(car.name, car.baseImage);
+  const displayImages =
+    directionalGalleryImages.length > 0
+      ? directionalGalleryImages
+      : heroImage
+      ? [{ src: heroImage, label: "Main" }]
+      : [];
 
   const dailyRate = calculateDailyRate(car.power);
   const estimatedWeekendRate = dailyRate * 2;
   const estimatedWeeklyRate = dailyRate * 7;
 
-  const mapEmbedUrl = buildOpenStreetMapEmbedUrl(
-    SHOWROOM_LOCATION.latitude,
-    SHOWROOM_LOCATION.longitude
-  );
   const mapViewUrl = buildOpenStreetMapViewUrl(
     SHOWROOM_LOCATION.latitude,
     SHOWROOM_LOCATION.longitude
@@ -113,21 +191,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
         <div className="mx-auto w-full max-w-7xl space-y-8 px-6 pb-10 md:px-8 md:pb-12">
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.3fr_1fr]">
           <article className="overflow-hidden border border-black/10 bg-white">
-            {heroImage ? (
-              <img
-                src={heroImage}
-                alt={car.name}
-                className="block w-full"
-                loading="eager"
-                decoding="async"
-                draggable={false}
-                style={{ backgroundColor: "#ffffff" }}
-              />
-            ) : (
-              <div className="flex aspect-8/3 items-center justify-center text-xs uppercase tracking-[0.18em] text-gray-400">
-                Image unavailable
-              </div>
-            )}
+            <CarImageCarousel carName={car.name} images={displayImages} />
           </article>
 
           <article className="border border-black/10 bg-white p-5">
@@ -229,16 +293,14 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
           </div>
 
           <div className="mt-4 overflow-hidden border border-black/10">
-            <iframe
-              title="SPURR Showroom Map"
-              src={mapEmbedUrl}
-              className="h-88 w-full"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
+            <ShowroomMap
+              latitude={SHOWROOM_LOCATION.latitude}
+              longitude={SHOWROOM_LOCATION.longitude}
+              className="h-72 w-full sm:h-88 lg:h-96"
             />
           </div>
           <p className="mt-3 text-xs text-gray-500">
-            Map source: OpenStreetMap
+            Map data from OpenStreetMap
           </p>
         </article>
         </div>
