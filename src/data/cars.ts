@@ -29,7 +29,7 @@ export const cars: Car[] = [
       "The most track-focused 911 ever, with motorsport-derived aerodynamics and a naturally aspirated flat-six.",
     color: "#F59E0B",
     bgGradient: "from-amber-50 to-white",
-    baseImage: "porsche-911-gtr.png",
+    baseImage: "porsche-911-gtr.webp",
     sequenceFolder: "porsche 911 sequence",
     sequenceCount: 99,
     sequencePrefix: "ezgif-frame-",
