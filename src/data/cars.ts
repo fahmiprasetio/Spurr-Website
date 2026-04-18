@@ -13,7 +13,7 @@ export interface Car {
   sequenceFolder?: string; // subfolder inside public/car-image(sequences)/
   sequenceCount?: number; // total number of frames
   sequencePrefix?: string; // filename prefix, e.g. "ezgif-frame-"
-  sequenceExt?: string; // file extension, e.g. "jpg"
+    sequenceExt?: string; // file extension, e.g. "webp"
 }
 
 export const cars: Car[] = [
@@ -33,7 +33,7 @@ export const cars: Car[] = [
     sequenceFolder: "porsche 911 sequence",
     sequenceCount: 99,
     sequencePrefix: "ezgif-frame-",
-    sequenceExt: "jpg",
+    sequenceExt: "webp",
   },
   {
     id: "bugatti-chiron",
