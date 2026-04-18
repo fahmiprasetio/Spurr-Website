@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 export type CarCarouselImage = {
   src: string;
@@ -21,17 +22,19 @@ function wrapIndex(index: number, total: number): number {
 
 export default function CarImageCarousel({ carName, images }: CarImageCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
   const hasMultipleImages = images.length > 1;
 
   useEffect(() => {
     setActiveIndex(0);
+    setIsLoaded(false);
   }, [images.length, images[0]?.src]);
 
   const activeImage = images[activeIndex] ?? null;
 
   if (!activeImage) {
     return (
-      <div className="flex aspect-8/3 items-center justify-center text-xs uppercase tracking-[0.18em] text-gray-400">
+      <div className="flex aspect-video items-center justify-center bg-white text-xs uppercase tracking-[0.18em] text-gray-400">
         Image unavailable
       </div>
     );
@@ -48,14 +51,15 @@ export default function CarImageCarousel({ carName, images }: CarImageCarouselPr
   return (
     <div>
       <div className="relative aspect-video bg-white">
-        <img
+        <Image
           src={activeImage.src}
           alt={`${carName} - ${activeImage.label} view`}
-          className="h-full w-full object-contain"
-          loading="eager"
-          decoding="async"
-          draggable={false}
+          fill
+          priority={activeIndex === 0}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 65vw, 800px"
+          className="object-contain"
           style={{ backgroundColor: "#ffffff" }}
+          onLoad={() => setIsLoaded(true)}
         />
 
         {hasMultipleImages ? (
@@ -95,23 +99,24 @@ export default function CarImageCarousel({ carName, images }: CarImageCarouselPr
                 onClick={() => setActiveIndex(imageIndex)}
                 aria-label={`Show ${image.label} image`}
                 aria-pressed={isActive}
-                className={`border px-1.5 py-1 text-left transition-colors ${
+                className={`relative border px-1.5 py-1 text-left transition-colors ${
                   isActive
                     ? "border-black bg-white"
                     : "border-black/15 bg-white/60 hover:border-black/45 hover:bg-white"
                 }`}
               >
-                <img
-                  src={image.src}
-                  alt=""
-                  aria-hidden="true"
-                  className="block h-14 w-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  style={{ backgroundColor: "#ffffff" }}
-                />
-                {/* label arah dihilangkan */}
+                <div className="relative h-14 w-full overflow-hidden bg-white">
+                  <Image
+                    src={image.src}
+                    alt=""
+                    aria-hidden="true"
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-cover"
+                    loading="lazy"
+                    style={{ backgroundColor: "#ffffff" }}
+                  />
+                </div>
               </button>
             );
           })}
