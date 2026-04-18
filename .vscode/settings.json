@@ -1,0 +1,8 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "/^git -C \"d:\\\\Projek_Web_dan_Mobile\\\\Spurr_Website\" status --short ; git -C \"d:\\\\Projek_Web_dan_Mobile\\\\Spurr_Website\" branch --show-current ; git -C \"d:\\\\Projek_Web_dan_Mobile\\\\Spurr_Website\" remote -v$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
+}

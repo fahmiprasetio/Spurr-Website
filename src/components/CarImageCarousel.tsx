@@ -47,11 +47,11 @@ export default function CarImageCarousel({ carName, images }: CarImageCarouselPr
 
   return (
     <div>
-      <div className="relative">
+      <div className="relative aspect-video bg-white">
         <img
           src={activeImage.src}
           alt={`${carName} - ${activeImage.label} view`}
-          className="block w-full"
+          className="h-full w-full object-contain"
           loading="eager"
           decoding="async"
           draggable={false}
@@ -111,9 +111,7 @@ export default function CarImageCarousel({ carName, images }: CarImageCarouselPr
                   draggable={false}
                   style={{ backgroundColor: "#ffffff" }}
                 />
-                <span className="mt-1 block text-[10px] uppercase tracking-[0.14em] text-gray-600">
-                  {image.label}
-                </span>
+                {/* label arah dihilangkan */}
               </button>
             );
           })}
