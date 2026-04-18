@@ -1,0 +1,16 @@
+export const STATIC_BASE_IMAGE_FILES = [
+  "Chiron Super Sport 45 degree.png",
+  "Chiron Super Sport back.png",
+  "Chiron Super Sport front.png",
+  "Chiron Super Sport.png",
+  "Huayra Roadster BC front.png",
+  "Huayra Roadster BC.png",
+  "Jesko Absolut front.png",
+  "Jesko Absolut.png",
+  "mclaren p1 front.png",
+  "mclaren p1.png",
+  "porsche-911-gtr front.png",
+  "porsche-911-gtr.png",
+  "SF90 Stradale front.png",
+  "SF90 Stradale.png",
+] as const;

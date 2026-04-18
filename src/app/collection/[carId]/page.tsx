@@ -3,6 +3,7 @@ import path from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { framesMap } from "@/data/frames";
+import { STATIC_BASE_IMAGE_FILES } from "@/data/base-image-files";
 import CarImageCarousel, { type CarCarouselImage } from "@/components/CarImageCarousel";
 import ProtectedCarActions from "@/components/ProtectedCarActions";
 import CarReviewsPanel from "@/components/CarReviewsPanel";
@@ -49,7 +50,11 @@ async function resolveDirectionalGalleryImages(
   try {
     availableFileNames = await readdir(BASED_IMAGE_DIRECTORY);
   } catch {
-    return [];
+    availableFileNames = [...STATIC_BASE_IMAGE_FILES];
+  }
+
+  if (availableFileNames.length === 0) {
+    availableFileNames = [...STATIC_BASE_IMAGE_FILES];
   }
 
   if (availableFileNames.length === 0) {
