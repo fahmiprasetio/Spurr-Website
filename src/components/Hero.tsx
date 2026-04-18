@@ -73,7 +73,7 @@ export default function Hero({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
         >
-          <p className="text-xs tracking-[0.4em] uppercase text-white/75 mb-8">
+          <p className="text-xs tracking-[0.4em] uppercase text-white/75 mb-3">
             An Unrivalled Automotive Edit
           </p>
         </motion.div>
@@ -99,7 +99,7 @@ export default function Hero({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
         >
-          <p className="text-lg md:text-xl text-gray-100/95 max-w-2xl mx-auto leading-relaxed font-light mt-10">
+          <p className="text-lg md:text-xl text-gray-100/95 max-w-2xl mx-auto leading-relaxed font-light mt-5">
             A definitive showcase of the world&apos;s most extraordinary
             performance automobiles where Italian artistry, German precision,
             and Japanese mastery converge in singular pursuit of excellence.
@@ -110,7 +110,7 @@ export default function Hero({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.7, ease: "easeOut" }}
-          className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <a
             href="/car"
