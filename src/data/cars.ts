@@ -48,6 +48,9 @@ export const cars: Car[] = [
     color: "#1E40AF",
     bgGradient: "from-blue-50 to-white",
     sequenceFolder: "Chiron Super Sport",
+    sequenceCount: 31,
+    sequencePrefix: "ezgif-frame-",
+    sequenceExt: "webp",
   },
   {
     id: "ferrari-sf90",
@@ -62,6 +65,9 @@ export const cars: Car[] = [
     color: "#DC2626",
     bgGradient: "from-red-50 to-white",
     sequenceFolder: "SF90 Stradale sequence",
+    sequenceCount: 30,
+    sequencePrefix: "ezgif-frame-",
+    sequenceExt: "webp",
   },
   {
     id: "lamborghini-revuelto",
@@ -141,6 +147,9 @@ export const cars: Car[] = [
     color: "#7C3AED",
     bgGradient: "from-purple-50 to-white",
     sequenceFolder: "huayra roadster bc",
+    sequenceCount: 21,
+    sequencePrefix: "ezgif-frame-",
+    sequenceExt: "webp",
   },
   {
     id: "koenigsegg-jesko",
@@ -155,6 +164,9 @@ export const cars: Car[] = [
     color: "#EA580C",
     bgGradient: "from-orange-50 to-white",
     sequenceFolder: "Jesko Absolut",
+    sequenceCount: 29,
+    sequencePrefix: "ezgif-frame-",
+    sequenceExt: "webp",
   },
   {
     id: "mclaren-p1",
@@ -169,6 +181,9 @@ export const cars: Car[] = [
     color: "#F97316",
     bgGradient: "from-orange-50 to-white",
     sequenceFolder: "mclaren p1",
+    sequenceCount: 40,
+    sequencePrefix: "ezgif-frame-",
+    sequenceExt: "webp",
   },
   {
     id: "aston-martin-valkyrie",
