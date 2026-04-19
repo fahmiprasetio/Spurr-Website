@@ -6,6 +6,7 @@ const DB_RETRY_DELAY_MS = 60_000;
 const CARS_CACHE_TTL_MS = 15_000;
 let skipDbUntil = 0;
 let carsCache: { data: Car[]; expiresAt: number } | null = null;
+const fallbackCarById = new Map(fallbackCars.map((car) => [car.id, car]));
 
 function getSafeErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -46,23 +47,27 @@ export async function getCarsFromDb(): Promise<Car[]> {
       return fallbackCars;
     }
 
-    const mappedCars = rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      brand: row.brand.name,
-      year: row.year,
-      power: row.power,
-      topSpeed: row.topSpeed,
-      acceleration: row.acceleration,
-      description: row.description,
-      color: row.color,
-      bgGradient: row.bgGradient,
-      baseImage: row.baseImage ?? undefined,
-      sequenceFolder: row.sequenceFolder ?? undefined,
-      sequenceCount: row.sequenceCount ?? undefined,
-      sequencePrefix: row.sequencePrefix ?? undefined,
-      sequenceExt: row.sequenceExt ?? undefined,
-    }));
+    const mappedCars = rows.map((row) => {
+      const fallbackCar = fallbackCarById.get(row.id);
+
+      return {
+        id: row.id,
+        name: row.name,
+        brand: row.brand.name,
+        year: row.year,
+        power: row.power,
+        topSpeed: row.topSpeed,
+        acceleration: row.acceleration,
+        description: row.description,
+        color: row.color,
+        bgGradient: row.bgGradient,
+        baseImage: row.baseImage ?? fallbackCar?.baseImage ?? undefined,
+        sequenceFolder: row.sequenceFolder ?? fallbackCar?.sequenceFolder ?? undefined,
+        sequenceCount: row.sequenceCount ?? fallbackCar?.sequenceCount ?? undefined,
+        sequencePrefix: row.sequencePrefix ?? fallbackCar?.sequencePrefix ?? undefined,
+        sequenceExt: row.sequenceExt ?? fallbackCar?.sequenceExt ?? undefined,
+      };
+    });
 
     carsCache = {
       data: mappedCars,

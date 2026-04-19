@@ -44,15 +44,28 @@ npm install
 ```bash
 # Create .env.local and add your database connection string
 DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
+
+# Midtrans payment gateway (required for real payment flow)
+MIDTRANS_SERVER_KEY="SB-Mid-server-xxxxxxxx"
+MIDTRANS_IS_PRODUCTION="false"
+
+# Public app URL for Midtrans redirect callbacks
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-4. Sync database schema:
+4.1 Configure Midtrans HTTP notification callback URL to:
+
+```text
+https://your-domain.com/api/payments/midtrans/webhook
+```
+
+5. Sync database schema:
 
 ```bash
 npm run db:push
 ```
 
-5. Start development server:
+6. Start development server:
 
 ```bash
 npm run dev

@@ -11,10 +11,10 @@ import {
   PAYMENT_METHOD_OPTIONS,
 } from "@/lib/rental";
 import {
-  notifyPaymentReceived,
   notifyRentalCreated,
   notifyRentalStatusChanged,
 } from "@/lib/notification-service";
+import { createMidtransSnapTransaction, isMidtransConfigured } from "@/lib/midtrans";
 import { prisma } from "@/lib/prisma";
 
 const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
@@ -25,6 +25,7 @@ const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
 ];
 
 const ACTIVE_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED", "ACTIVE"];
+const CANCELLABLE_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED"];
 
 const RENTAL_STATUS_LABEL: Record<string, string> = {
   PENDING: "Awaiting Payment",
@@ -37,7 +38,9 @@ const RENTAL_STATUS_LABEL: Record<string, string> = {
 const STATUS_MESSAGES: Record<string, string> = {
   "rental-created": "Rental booking created successfully.",
   "payment-completed": "Payment completed successfully.",
+  "payment-pending": "Payment is being verified. Your booking status will update shortly.",
   "payment-already-paid": "This rental has already been paid.",
+  "rental-cancelled": "Rental booking cancelled successfully.",
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -53,6 +56,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   "rental-not-found": "Rental record was not found.",
   "payment-not-allowed": "Payment is not allowed for this rental status.",
   "payment-failed": "Payment processing failed. Please try again.",
+  "payment-gateway-unavailable": "Payment gateway is not configured yet.",
+  "payment-gateway-failed": "Unable to start payment session. Please try again.",
+  "cancel-not-allowed": "This rental cannot be cancelled from your account.",
+  "cancel-failed": "Failed to cancel rental. Please try again.",
 };
 
 type RentalsPageProps = {
@@ -232,6 +239,16 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
         },
       });
 
+      await tx.car.updateMany({
+        where: {
+          id: car.id,
+          status: "AVAILABLE",
+        },
+        data: {
+          status: "BOOKED",
+        },
+      });
+
       return { ok: true as const, rental: createdRental, payment: createdPayment };
     }).catch((error) => {
       if (isRentalOverlapConstraintError(error)) {
@@ -315,21 +332,17 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
       redirect("/rentals?status=payment-already-paid");
     }
 
-    const paidAt = new Date();
+    if (!isMidtransConfigured()) {
+      redirect("/rentals?error=payment-gateway-unavailable");
+    }
 
     const transactionResult = await prisma.$transaction(async (tx) => {
       const updatedPayment = await tx.payment.update({
         where: { id: rental.payment!.id },
         data: {
           method: methodValue as PaymentMethod,
-          status: "PAID",
-          paidAt,
+          status: "PENDING",
         },
-      });
-
-      await tx.rental.update({
-        where: { id: rental.id },
-        data: { status: "CONFIRMED" },
       });
 
       return { payment: updatedPayment };
@@ -344,27 +357,125 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
 
     const { payment } = transactionResult;
 
-    try {
-      await notifyPaymentReceived({
-        userId: currentUser.id,
-        carName: rental.car.name,
-        amount: payment.amount,
-        transactionRef: payment.transactionRef,
-      });
+    const customerName =
+      currentUser.name?.trim() || currentUser.email.split("@")[0] || "SPURR Driver";
 
-      await notifyRentalStatusChanged({
-        userId: currentUser.id,
-        carName: rental.car.name,
-        statusLabel: "Confirmed",
-      });
-    } catch (error) {
-      console.error("payment notifications failed:", error);
+    const gatewaySession = await createMidtransSnapTransaction({
+      orderId: payment.transactionRef,
+      grossAmount: payment.amount,
+      customerName,
+      customerEmail: currentUser.email,
+      itemName: `${rental.car.name} Rental`,
+    }).catch((error) => {
+      console.error("createMidtransSnapTransaction failed:", error);
+      return null;
+    });
+
+    if (!gatewaySession) {
+      redirect("/rentals?error=payment-gateway-failed");
     }
 
     revalidatePath("/rentals");
     revalidatePath("/notifications");
     revalidatePath("/admin");
-    redirect("/rentals?status=payment-completed");
+    redirect(gatewaySession.redirectUrl);
+  }
+
+  async function cancelRentalAction(formData: FormData) {
+    "use server";
+
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      redirect("/sign-in?next=/rentals");
+    }
+
+    const rentalId = formData.get("rentalId");
+
+    if (typeof rentalId !== "string") {
+      redirect("/rentals?error=invalid-input");
+    }
+
+    const rental = await prisma.rental.findFirst({
+      where: {
+        id: rentalId,
+        userId: currentUser.id,
+      },
+      include: {
+        car: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+        payment: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!rental) {
+      redirect("/rentals?error=rental-not-found");
+    }
+
+    if (
+      !CANCELLABLE_RENTAL_STATUSES.includes(rental.status) ||
+      rental.payment?.status === "PAID"
+    ) {
+      redirect("/rentals?error=cancel-not-allowed");
+    }
+
+    const cancelResult = await prisma.$transaction(async (tx) => {
+      await tx.rental.update({
+        where: { id: rental.id },
+        data: { status: "CANCELLED" },
+      });
+
+      if (rental.car.status === "BOOKED") {
+        const hasOtherBookedRentals = await tx.rental.findFirst({
+          where: {
+            carId: rental.car.id,
+            id: { not: rental.id },
+            status: { in: ACTIVE_RENTAL_STATUSES },
+          },
+          select: { id: true },
+        });
+
+        if (!hasOtherBookedRentals) {
+          await tx.car.update({
+            where: { id: rental.car.id },
+            data: { status: "AVAILABLE" },
+          });
+        }
+      }
+
+      return true;
+    }).catch((error) => {
+      console.error("cancelRentalAction failed:", error);
+      return false;
+    });
+
+    if (!cancelResult) {
+      redirect("/rentals?error=cancel-failed");
+    }
+
+    try {
+      await notifyRentalStatusChanged({
+        userId: currentUser.id,
+        carName: rental.car.name,
+        statusLabel: "Cancelled",
+      });
+    } catch (error) {
+      console.error("cancelRentalAction notification failed:", error);
+    }
+
+    revalidatePath("/rentals");
+    revalidatePath("/notifications");
+    revalidatePath("/admin");
+    redirect("/rentals?status=rental-cancelled");
   }
 
   return (
@@ -516,30 +627,44 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                   rental.payment.status !== "PAID" &&
                   rental.status !== "CANCELLED" &&
                   rental.status !== "COMPLETED" ? (
-                    <form action={payRentalAction} className="w-full max-w-xs space-y-2">
-                      <input type="hidden" name="rentalId" value={rental.id} />
-                      <label className="block text-xs uppercase tracking-[0.16em] text-gray-500">
-                        Payment Method
-                        <select
-                          name="method"
-                          required
-                          defaultValue={rental.payment.method}
-                          className="mt-1 w-full border border-black/20 px-3 py-2 text-sm outline-none focus:border-black"
+                    <div className="w-full max-w-xs space-y-2">
+                      <form action={payRentalAction} className="space-y-2">
+                        <input type="hidden" name="rentalId" value={rental.id} />
+                        <label className="block text-xs uppercase tracking-[0.16em] text-gray-500">
+                          Payment Method
+                          <select
+                            name="method"
+                            required
+                            defaultValue={rental.payment.method}
+                            className="mt-1 w-full border border-black/20 px-3 py-2 text-sm outline-none focus:border-black"
+                          >
+                            {PAYMENT_METHOD_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          type="submit"
+                          className="w-full border border-black px-4 py-2 text-xs uppercase tracking-[0.2em] text-black hover:bg-black hover:text-white"
                         >
-                          {PAYMENT_METHOD_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <button
-                        type="submit"
-                        className="w-full border border-black px-4 py-2 text-xs uppercase tracking-[0.2em] text-black hover:bg-black hover:text-white"
-                      >
-                        Pay Now
-                      </button>
-                    </form>
+                          Pay Now
+                        </button>
+                      </form>
+
+                      {CANCELLABLE_RENTAL_STATUSES.includes(rental.status) ? (
+                        <form action={cancelRentalAction}>
+                          <input type="hidden" name="rentalId" value={rental.id} />
+                          <button
+                            type="submit"
+                            className="w-full border border-red-300 px-4 py-2 text-xs uppercase tracking-[0.2em] text-red-700 hover:bg-red-50"
+                          >
+                            Cancel Booking
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
                   ) : (
                     <div className="text-right">
                       {rental.payment?.status === "PAID" ? (
