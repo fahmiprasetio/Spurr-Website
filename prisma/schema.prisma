@@ -54,6 +54,12 @@ enum NotificationStatus {
   FAILED
 }
 
+enum WebhookProcessingStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
 model Brand {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -205,11 +211,35 @@ model Payment {
   status         PaymentStatus @default(PENDING)
   transactionRef String        @unique
   paidAt         DateTime?
+  webhookEvents  PaymentWebhookEvent[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   @@index([userId])
   @@index([status])
+}
+
+model PaymentWebhookEvent {
+  id                String                  @id @default(cuid())
+  provider          String
+  orderId           String
+  eventKey          String                  @unique
+  paymentId         String?
+  payment           Payment?                @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  transactionStatus String?
+  mappedStatus      PaymentStatus?
+  processingStatus  WebhookProcessingStatus @default(RECEIVED)
+  receivedCount     Int                     @default(1)
+  lastReceivedAt    DateTime                @default(now())
+  processedAt       DateTime?
+  errorMessage      String?
+  payload           Json
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  @@index([provider, orderId])
+  @@index([paymentId])
+  @@index([processingStatus])
 }
 
 model EmailNotification {

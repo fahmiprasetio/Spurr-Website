@@ -1,10 +1,14 @@
-import { type RentalStatus } from "@prisma/client";
+import { Prisma, type PaymentStatus, type RentalStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { notifyPaymentReceived, notifyRentalStatusChanged } from "@/lib/notification-service";
 import {
+  buildMidtransWebhookEventKey,
+  getMidtransOrderId,
+  getMidtransTransactionStatus,
   isMidtransConfigured,
   isMidtransTerminalFailure,
   mapMidtransTransactionToPaymentStatus,
+  resolvePaymentStatusTransition,
   verifyMidtransSignature,
   type MidtransNotificationPayload,
 } from "@/lib/midtrans";
@@ -22,33 +26,141 @@ const RENTAL_STATUS_LABEL: Record<RentalStatus, string> = {
 
 export const dynamic = "force-dynamic";
 
+type WebhookTransactionResult =
+  | {
+      kind: "processed";
+      orderId: string;
+      userId: string;
+      carName: string;
+      amount: number;
+      transactionRef: string;
+      previousPaymentStatus: PaymentStatus;
+      nextPaymentStatus: PaymentStatus;
+      previousRentalStatus: RentalStatus;
+      nextRentalStatus: RentalStatus;
+    }
+  | {
+      kind: "duplicate";
+      orderId: string;
+      paymentStatus: PaymentStatus;
+    }
+  | {
+      kind: "not-found";
+      orderId: string;
+    }
+  | {
+      kind: "error";
+    };
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unexpected webhook processing error.";
+}
+
+function toPayloadJsonObject(raw: unknown): Prisma.JsonObject | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+
+  return raw as Prisma.JsonObject;
+}
+
 export async function POST(request: NextRequest) {
   if (!isMidtransConfigured()) {
     return NextResponse.json({ error: "Midtrans is not configured." }, { status: 503 });
   }
 
-  let payload: MidtransNotificationPayload;
+  const rawBody = await request.text();
+
+  let payloadRaw: unknown;
 
   try {
-    payload = (await request.json()) as MidtransNotificationPayload;
+    payloadRaw = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
+
+  const payloadJson = toPayloadJsonObject(payloadRaw);
+
+  if (!payloadJson) {
+    return NextResponse.json({ error: "Invalid Midtrans payload object." }, { status: 400 });
+  }
+
+  const payload = payloadJson as unknown as MidtransNotificationPayload;
 
   if (!verifyMidtransSignature(payload)) {
     return NextResponse.json({ error: "Invalid Midtrans signature." }, { status: 401 });
   }
 
-  const orderId = typeof payload.order_id === "string" ? payload.order_id.trim() : "";
+  const orderId = getMidtransOrderId(payload);
 
   if (!orderId) {
     return NextResponse.json({ error: "Missing order_id." }, { status: 400 });
   }
 
-  const nextPaymentStatus = mapMidtransTransactionToPaymentStatus(payload);
+  const transactionStatus = getMidtransTransactionStatus(payload);
+  const candidatePaymentStatus = mapMidtransTransactionToPaymentStatus(payload);
+  const eventKey = buildMidtransWebhookEventKey(payload);
+  const auditPayload: Prisma.InputJsonObject = {
+    ...payloadJson,
+    _meta: {
+      receivedAt: new Date().toISOString(),
+      rawBodyLength: rawBody.length,
+    },
+  };
 
   const transactionResult = await prisma
     .$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${orderId}))`;
+
+      const existingEvent = await tx.paymentWebhookEvent.findUnique({
+        where: { eventKey },
+        select: {
+          id: true,
+          processingStatus: true,
+        },
+      });
+
+      const eventRecord = existingEvent
+        ? await tx.paymentWebhookEvent.update({
+            where: { id: existingEvent.id },
+            data: {
+              receivedCount: {
+                increment: 1,
+              },
+              lastReceivedAt: new Date(),
+              transactionStatus: transactionStatus || null,
+              mappedStatus: candidatePaymentStatus,
+              payload: auditPayload,
+            },
+          })
+        : await tx.paymentWebhookEvent.create({
+            data: {
+              provider: "MIDTRANS",
+              orderId,
+              eventKey,
+              transactionStatus: transactionStatus || null,
+              mappedStatus: candidatePaymentStatus,
+              payload: auditPayload,
+            },
+          });
+
+      if (existingEvent?.processingStatus === "PROCESSED") {
+        const existingPayment = await tx.payment.findUnique({
+          where: { transactionRef: orderId },
+          select: { status: true },
+        });
+
+        return {
+          kind: "duplicate" as const,
+          orderId,
+          paymentStatus: existingPayment?.status ?? candidatePaymentStatus,
+        };
+      }
+
       const payment = await tx.payment.findUnique({
         where: { transactionRef: orderId },
         include: {
@@ -70,18 +182,33 @@ export async function POST(request: NextRequest) {
       });
 
       if (!payment) {
-        return { kind: "not-found" as const };
+        await tx.paymentWebhookEvent.update({
+          where: { id: eventRecord.id },
+          data: {
+            processingStatus: "FAILED",
+            errorMessage: "Payment not found for order_id.",
+          },
+        });
+
+        return { kind: "not-found" as const, orderId };
       }
 
+      const nextPaymentStatus = resolvePaymentStatusTransition(
+        payment.status,
+        candidatePaymentStatus
+      );
+      const paymentStatusChanged = nextPaymentStatus !== payment.status;
       const shouldSetPaidAt = nextPaymentStatus === "PAID" && !payment.paidAt;
 
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: nextPaymentStatus,
-          ...(shouldSetPaidAt ? { paidAt: new Date() } : {}),
-        },
-      });
+      if (paymentStatusChanged || shouldSetPaidAt) {
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: nextPaymentStatus,
+            ...(shouldSetPaidAt ? { paidAt: new Date() } : {}),
+          },
+        });
+      }
 
       let nextRentalStatus = payment.rental.status;
 
@@ -89,18 +216,21 @@ export async function POST(request: NextRequest) {
         nextRentalStatus = "CONFIRMED";
       }
 
-      if (isMidtransTerminalFailure(payload) && payment.rental.status === "PENDING") {
+      const shouldCancelPendingRental =
+        payment.rental.status === "PENDING" &&
+        (isMidtransTerminalFailure(payload) || nextPaymentStatus === "REFUNDED");
+
+      if (shouldCancelPendingRental) {
         nextRentalStatus = "CANCELLED";
       }
 
-      if (
-        nextPaymentStatus === "REFUNDED" &&
-        (payment.rental.status === "PENDING" || payment.rental.status === "CONFIRMED")
-      ) {
+      if (nextPaymentStatus === "REFUNDED" && payment.rental.status === "CONFIRMED") {
         nextRentalStatus = "CANCELLED";
       }
 
-      if (nextRentalStatus !== payment.rental.status) {
+      const rentalStatusChanged = nextRentalStatus !== payment.rental.status;
+
+      if (rentalStatusChanged) {
         await tx.rental.update({
           where: { id: payment.rental.id },
           data: { status: nextRentalStatus },
@@ -137,19 +267,53 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      await tx.paymentWebhookEvent.update({
+        where: { id: eventRecord.id },
+        data: {
+          paymentId: payment.id,
+          mappedStatus: nextPaymentStatus,
+          processingStatus: "PROCESSED",
+          processedAt: new Date(),
+          errorMessage: null,
+        },
+      });
+
       return {
-        kind: "ok" as const,
+        kind: "processed" as const,
+        orderId,
         userId: payment.userId,
         carName: payment.rental.car.name,
         amount: payment.amount,
         transactionRef: payment.transactionRef,
         previousPaymentStatus: payment.status,
+        nextPaymentStatus,
         previousRentalStatus: payment.rental.status,
         nextRentalStatus,
       };
+    }, {
+      maxWait: 10_000,
+      timeout: 20_000,
     })
     .catch((error) => {
       console.error("midtrans webhook transaction failed:", error);
+      const errorMessage = toErrorMessage(error).slice(0, 600);
+
+      void prisma.paymentWebhookEvent
+        .updateMany({
+          where: {
+            eventKey,
+            processingStatus: { not: "PROCESSED" },
+          },
+          data: {
+            processingStatus: "FAILED",
+            errorMessage,
+            lastReceivedAt: new Date(),
+          },
+        })
+        .catch((updateError) => {
+          console.error("midtrans webhook event failure update failed:", updateError);
+        });
+
       return { kind: "error" as const };
     });
 
@@ -161,7 +325,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to process callback." }, { status: 500 });
   }
 
-  if (nextPaymentStatus === "PAID" && transactionResult.previousPaymentStatus !== "PAID") {
+  if (transactionResult.kind === "duplicate") {
+    return NextResponse.json({
+      ok: true,
+      duplicate: true,
+      orderId: transactionResult.orderId,
+      paymentStatus: transactionResult.paymentStatus,
+    });
+  }
+
+  if (
+    transactionResult.nextPaymentStatus === "PAID" &&
+    transactionResult.previousPaymentStatus !== "PAID"
+  ) {
     await notifyPaymentReceived({
       userId: transactionResult.userId,
       carName: transactionResult.carName,
@@ -184,7 +360,8 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    orderId,
-    paymentStatus: nextPaymentStatus,
+    duplicate: false,
+    orderId: transactionResult.orderId,
+    paymentStatus: transactionResult.nextPaymentStatus,
   });
 }

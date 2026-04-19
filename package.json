@@ -15,7 +15,9 @@
     "db:generate": "node ./node_modules/prisma/build/index.js generate",
     "db:push": "node ./node_modules/prisma/build/index.js db push",
     "db:seed": "node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts",
-    "db:studio": "node ./node_modules/prisma/build/index.js studio"
+    "db:studio": "node ./node_modules/prisma/build/index.js studio",
+    "uat:midtrans": "node ./node_modules/tsx/dist/cli.mjs scripts/uat-midtrans-sandbox.ts",
+    "uat:midtrans:webhook": "node ./node_modules/tsx/dist/cli.mjs scripts/uat-midtrans-webhook-scenarios.ts"
   },
   "dependencies": {
     "@prisma/client": "6.9.0",

@@ -24,7 +24,10 @@ export type MidtransNotificationPayload = {
   gross_amount?: string | number;
   signature_key?: string;
   transaction_status?: string;
+  transaction_id?: string;
   fraud_status?: string;
+  payment_type?: string;
+  currency?: string;
 };
 
 export type MidtransSnapTransactionArgs = {
@@ -92,6 +95,54 @@ function normalizeTransactionStatus(payload: MidtransNotificationPayload): strin
   return normalizeStringValue(payload.transaction_status).toLowerCase();
 }
 
+function normalizeFraudStatus(payload: MidtransNotificationPayload): string {
+  return normalizeStringValue(payload.fraud_status).toLowerCase();
+}
+
+export function getMidtransOrderId(payload: MidtransNotificationPayload): string {
+  return normalizeStringValue(payload.order_id);
+}
+
+export function getMidtransTransactionStatus(payload: MidtransNotificationPayload): string {
+  return normalizeTransactionStatus(payload);
+}
+
+export function buildMidtransWebhookEventKey(payload: MidtransNotificationPayload): string {
+  const parts = [
+    getMidtransOrderId(payload) || "-",
+    normalizeStringValue(payload.transaction_id) || "-",
+    normalizeTransactionStatus(payload) || "-",
+    normalizeFraudStatus(payload) || "-",
+    normalizeStringValue(payload.status_code) || "-",
+    normalizeStringValue(payload.gross_amount) || "-",
+  ];
+
+  return createHash("sha256").update(parts.join("|")).digest("hex");
+}
+
+export function resolvePaymentStatusTransition(
+  currentStatus: PaymentStatus,
+  nextStatus: PaymentStatus
+): PaymentStatus {
+  if (currentStatus === nextStatus) {
+    return currentStatus;
+  }
+
+  if (currentStatus === "REFUNDED" || nextStatus === "REFUNDED") {
+    return "REFUNDED";
+  }
+
+  if (currentStatus === "PAID" && (nextStatus === "PENDING" || nextStatus === "FAILED")) {
+    return "PAID";
+  }
+
+  if (currentStatus === "FAILED" && nextStatus === "PENDING") {
+    return "FAILED";
+  }
+
+  return nextStatus;
+}
+
 export function isMidtransConfigured(): boolean {
   return getMidtransConfig() !== null;
 }
@@ -131,7 +182,7 @@ export function mapMidtransTransactionToPaymentStatus(
   payload: MidtransNotificationPayload
 ): PaymentStatus {
   const transactionStatus = normalizeTransactionStatus(payload);
-  const fraudStatus = normalizeStringValue(payload.fraud_status).toLowerCase();
+  const fraudStatus = normalizeFraudStatus(payload);
 
   if (transactionStatus === "settlement") {
     return "PAID";
