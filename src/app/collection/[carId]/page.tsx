@@ -127,10 +127,10 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
     car.sequenceFolder && car.sequenceFolder.trim() !== "" ? `${car.sequenceFolder}/` : "";
 
   const heroImage =
-    sequenceFrames.length > 0
-      ? `/car-image(sequences)/${sequenceFolderPath}${sequenceFrames[0]}`
-      : car.baseImage
+    car.baseImage
       ? `/car-image(based)/${car.baseImage}`
+      : sequenceFrames.length > 0
+      ? `/car-image(sequences)/${sequenceFolderPath}${sequenceFrames[0]}`
       : null;
   const directionalGalleryImages = await resolveDirectionalGalleryImages(car.name, car.baseImage);
   const displayImages =
