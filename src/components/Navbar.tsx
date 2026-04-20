@@ -213,16 +213,8 @@ export default function Navbar() {
                 : "none",
               paddingInline: contentInset,
               borderRadius: navbarRadius,
-              backdropFilter: isTopTransparent && !isOpen
-                ? "none"
-                : isScrolled
-                ? navbarBlur
-                : "none",
-              WebkitBackdropFilter: isTopTransparent && !isOpen
-                ? "none"
-                : isScrolled
-                ? navbarBlur
-                : "none",
+              backdropFilter: isOpen || isScrolled ? navbarBlur : "none",
+              WebkitBackdropFilter: isOpen || isScrolled ? navbarBlur : "none",
               border: isScrolled || (isOpen && isTopTransparent)
                 ? isScrolled
                   ? "0.0625rem solid rgba(255,255,255,0.35)"
