@@ -30,7 +30,7 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <p className="text-xs tracking-[0.4em] uppercase text-gray-400 mb-2">
+            <p className="text-xs tracking-[0.4em] uppercase text-gray-400 mb-2 mt-5">
               Curated Selection
             </p>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-black">
@@ -46,7 +46,7 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
 
       {/* Grid */}
       <section className="w-full py-20 flex flex-col items-center" style={{ background: "#fafafa" }}>
-        <div className="w-full max-w-7xl px-6 lg:px-8">
+        <div className="w-full max-w-7xl px-6 lg:px-8 -mt-7">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
             {hoverReadyCars.map((car, index) => (
               <motion.div
