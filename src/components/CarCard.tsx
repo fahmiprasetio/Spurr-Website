@@ -465,7 +465,7 @@ export default function CarCard({
     >
       <div
         className="relative overflow-hidden border border-gray-200 shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-gray-300 hover:shadow-[0_10px_24px_rgba(0,0,0,0.12)]"
-        style={{ borderRadius: "2px", background: "#e8e8e8" }}
+        style={{ borderRadius: "12px", background: "#e8e8e8" }}
       >
         {/* Brand tag */}
         <div
