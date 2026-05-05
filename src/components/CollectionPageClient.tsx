@@ -21,7 +21,7 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
     <main className="min-h-screen bg-white">
       {/* Header */}
       <div
-        className="w-full flex flex-col items-center border-b border-black/5 pt-28 pb-16 md:pt-32 md:pb-20"
+        className="w-full flex flex-col items-center border-b border-black/5 pt-16 pb-8 md:pt-20 md:pb-10"
         style={{ background: "#fafafa" }}
       >
         <div className="w-full max-w-7xl px-6 lg:px-8 text-center">
@@ -30,13 +30,13 @@ export default function CollectionPageClient({ cars }: CollectionPageClientProps
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <p className="text-xs tracking-[0.4em] uppercase text-gray-400 mb-4">
+            <p className="text-xs tracking-[0.4em] uppercase text-gray-400 mb-2">
               Curated Selection
             </p>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-black">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-black">
               Signature Catalogue
             </h1>
-            <div className="w-12 h-px bg-black/20 mx-auto mt-6 mb-6" />
+            <div className="w-12 h-px bg-black/20 mx-auto mt-4 mb-4" />
             <p className="text-gray-500 max-w-xl mx-auto text-sm leading-relaxed">
               Discover our current lineup of handpicked performance cars, built for refined city cruising and unforgettable weekend drives.
             </p>
