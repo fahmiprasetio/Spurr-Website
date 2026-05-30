@@ -112,6 +112,13 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
     };
   }, []);
 
+  const heroParallax = useTransform(scrollY, [0, 1200], [0, -360]);
+  const smoothHeroParallax = useSpring(heroParallax, {
+    stiffness: 90,
+    damping: 24,
+    mass: 0.8,
+  });
+
   // Delay the first section slightly so the cover motion feels smoother.
   const revealOffset = useTransform(scrollY, [0, 700], [90, 0]);
   const smoothRevealOffset = useSpring(revealOffset, {
@@ -151,12 +158,15 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
         ) : null}
       </AnimatePresence>
 
-      <div className="sticky top-0 z-0 h-screen overflow-hidden">
+      <motion.div
+        className="sticky top-0 z-0 h-screen overflow-hidden"
+        style={{ y: smoothHeroParallax }}
+      >
         <Hero
           isVideoActive={isHeroVideoActive}
           onVideoReady={handleHeroVideoReady}
         />
-      </div>
+      </motion.div>
 
       <motion.div className="relative z-20 -mt-16 md:-mt-20" style={{ y: smoothRevealOffset }}>
         <motion.div

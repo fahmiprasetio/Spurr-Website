@@ -255,7 +255,9 @@ export default function Navbar() {
                 : "0.0625rem solid rgba(0,0,0,0.08)",
               borderBottom: isTopTransparent && !isOpen
                 ? "0.0625rem solid rgba(255,255,255,0.72)"
-                : isScrolled || (isOpen && isTopTransparent)
+                : isScrolled
+                ? "0.0625rem solid rgba(255,255,255,0.25)"
+                : isOpen && isTopTransparent
                 ? "0.0625rem solid rgba(255,255,255,0.10)"
                 : "0.0625rem solid rgba(0,0,0,0.1)",
               transition: [
