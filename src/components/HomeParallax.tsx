@@ -112,7 +112,7 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
     };
   }, []);
 
-  const heroParallax = useTransform(scrollY, [0, 1200], [0, -360]);
+  const heroParallax = useTransform(scrollY, [0, 1200], [0, -600]);
   const smoothHeroParallax = useSpring(heroParallax, {
     stiffness: 90,
     damping: 24,
@@ -129,7 +129,7 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
   const sectionRadius = useTransform(scrollY, [0, 500], [44, 0]);
 
   return (
-    <div className="relative">
+    <div className="relative bg-black">
       <AnimatePresence>
         {showSplash ? (
           <motion.div
