@@ -14,7 +14,7 @@ A modern web application showcasing luxury car collections with interactive fram
 
 - **Frontend:** Next.js 16.1.6, React, TypeScript, Tailwind CSS 4, Framer Motion
 - **Backend:** Next.js API Routes, Node.js
-- **Database:** PostgreSQL (Neon), Prisma ORM
+- **Database:** PostgreSQL (Supabase), Prisma ORM
 - **Authentication:** Session-based with httpOnly cookies
 
 ## Getting Started
@@ -22,7 +22,7 @@ A modern web application showcasing luxury car collections with interactive fram
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL database (Neon recommended)
+- PostgreSQL database (Supabase recommended)
 
 ### Installation
 
