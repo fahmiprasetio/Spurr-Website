@@ -43,3 +43,6 @@ next-env.d.ts
 # copilot agent skills & customizations (local only)
 .agents/
 .understand-anything/
+.agent/
+
+screenshotan/

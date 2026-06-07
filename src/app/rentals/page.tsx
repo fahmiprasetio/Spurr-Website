@@ -16,6 +16,7 @@ import {
 } from "@/lib/notification-service";
 import { createMidtransSnapTransaction, isMidtransConfigured } from "@/lib/midtrans";
 import { prisma } from "@/lib/prisma";
+import SnapPaymentHandler from "@/components/SnapPaymentHandler";
 
 const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
   "BANK_TRANSFER",
@@ -63,7 +64,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 type RentalsPageProps = {
-  searchParams: Promise<{ status?: string; error?: string }>;
+  searchParams: Promise<{ status?: string; error?: string; snap_token?: string }>;
 };
 
 function parseDateInput(value: string): Date | null {
@@ -104,6 +105,11 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
     getCurrentUser(),
     searchParams,
   ]);
+
+  const clientKey = process.env.MIDTRANS_CLIENT_KEY || "";
+  const isProduction =
+    process.env.MIDTRANS_IS_PRODUCTION === "true" ||
+    process.env.MIDTRANS_IS_PRODUCTION === "1";
 
   if (!user) {
     redirect("/sign-in?next=/rentals");
@@ -378,7 +384,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
     revalidatePath("/rentals");
     revalidatePath("/notifications");
     revalidatePath("/admin");
-    redirect(gatewaySession.redirectUrl);
+    redirect(`/rentals?snap_token=${gatewaySession.token}`);
   }
 
   async function cancelRentalAction(formData: FormData) {
@@ -687,6 +693,13 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
           )}
         </div>
       </section>
+      {resolvedSearchParams.snap_token ? (
+        <SnapPaymentHandler
+          token={resolvedSearchParams.snap_token}
+          clientKey={clientKey}
+          isProduction={isProduction}
+        />
+      ) : null}
     </main>
   );
 }
