@@ -125,7 +125,7 @@ export default async function WishlistPage({ searchParams }: WishlistPageProps) 
           </Link>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="mt-8 grid grid-cols-1 gap-4">
           {wishlistItems.map((item) => (
             <article key={item.id} className="border border-black/10 bg-white p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-gray-400">{item.car.brand.name}</p>
@@ -156,7 +156,7 @@ export default async function WishlistPage({ searchParams }: WishlistPageProps) 
           ))}
 
           {wishlistItems.length === 0 ? (
-            <div className="md:col-span-2 border border-dashed border-black/20 bg-white px-4 py-8 text-center">
+            <div className="w-full border border-dashed border-black/20 bg-white px-4 py-8 text-center">
               <p className="text-sm text-gray-500">No saved cars yet.</p>
             </div>
           ) : null}
