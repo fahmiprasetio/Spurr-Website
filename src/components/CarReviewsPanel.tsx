@@ -9,6 +9,7 @@ type CarReviewsPanelProps = {
   carName: string;
   isSignedIn: boolean;
   initialReviews: CarReviewView[];
+  className?: string;
 };
 
 function formatReviewDate(value: string): string {
@@ -30,6 +31,7 @@ export default function CarReviewsPanel({
   carName,
   isSignedIn,
   initialReviews,
+  className = "",
 }: CarReviewsPanelProps) {
   const [reviews, setReviews] = useState(initialReviews);
   const [comment, setComment] = useState("");
@@ -85,16 +87,26 @@ export default function CarReviewsPanel({
     }
   }
 
+  const displayedReviews = reviews.slice(0, 2);
+
   return (
-    <article className="border border-black/10 bg-white p-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <article className={`border border-black/10 bg-white p-5 flex flex-col ${className}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-black/10 pb-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Community Reviews</p>
-          <h2 className="mt-1 text-xl font-semibold text-black">What drivers said about {carName}</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-black">Community Reviews</h2>
+          <p className="mt-1 text-sm font-medium text-gray-500">{carName}</p>
         </div>
-        <p className="text-xs uppercase tracking-[0.14em] text-gray-500">
-          {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
-        </p>
+        <div className="flex items-center gap-3">
+          <span className="text-xs uppercase tracking-[0.14em] text-gray-400 hidden sm:inline">
+            {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+          </span>
+          <Link
+            href={`/car/${carId}/comments`}
+            className="border border-black/20 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
+          >
+            All Comments
+          </Link>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="mt-5 border border-black/10 p-4">
@@ -143,13 +155,13 @@ export default function CarReviewsPanel({
         {errorMessage ? <p className="mt-3 text-sm text-red-600">{errorMessage}</p> : null}
       </form>
 
-      <div className="mt-5 space-y-3">
-        {reviews.length === 0 ? (
+      <div className="mt-5 space-y-3 flex-1 overflow-y-auto pr-1">
+        {displayedReviews.length === 0 ? (
           <p className="border border-dashed border-black/20 px-4 py-5 text-sm text-gray-500">
             No reviews yet. Be the first driver to leave a comment for this car.
           </p>
         ) : (
-          reviews.map((review) => (
+          displayedReviews.map((review) => (
             <div key={review.id} className="border border-black/10 px-4 py-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-black">{review.userName}</p>

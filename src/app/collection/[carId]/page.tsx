@@ -261,53 +261,43 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
           </article>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold text-black">Reviews</h2>
-            <Link
-              href={commentsHref}
-              className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
-            >
-              Open comments page
-            </Link>
-          </div>
-
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <CarReviewsPanel
             carId={car.id}
             carName={car.name}
             isSignedIn={Boolean(currentUser)}
             initialReviews={reviewItems}
+            className="lg:col-span-1 shadow-md h-[560px]"
           />
-        </div>
 
-        <article className="border border-black/10 bg-white p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Showroom Map</p>
-              <h2 className="mt-1 text-xl font-semibold text-black">{SHOWROOM_LOCATION.name}</h2>
-              <p className="mt-1 text-sm text-gray-500">{SHOWROOM_LOCATION.address}</p>
+          <article className="border border-black/10 bg-white p-5 lg:col-span-2 flex flex-col justify-between shadow-md h-[560px]">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-black/10 pb-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight text-black">{SHOWROOM_LOCATION.name}</h2>
+                <p className="mt-1 text-sm text-gray-500">{SHOWROOM_LOCATION.address}</p>
+              </div>
+              <a
+                href={mapViewUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="border border-black/20 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
+              >
+                Open Full Map
+              </a>
             </div>
-            <a
-              href={mapViewUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
-            >
-              Open Full Map
-            </a>
-          </div>
 
-          <div className="mt-4 overflow-hidden border border-black/10">
-            <ShowroomMap
-              latitude={SHOWROOM_LOCATION.latitude}
-              longitude={SHOWROOM_LOCATION.longitude}
-              className="h-72 w-full sm:h-88 lg:h-96"
-            />
-          </div>
-          <p className="mt-3 text-xs text-gray-500">
-            Map data from OpenStreetMap
-          </p>
-        </article>
+            <div className="mt-4 overflow-hidden border border-black/10 flex-1 flex flex-col">
+              <ShowroomMap
+                latitude={SHOWROOM_LOCATION.latitude}
+                longitude={SHOWROOM_LOCATION.longitude}
+                className="w-full h-full flex-1"
+              />
+            </div>
+            <p className="mt-3 text-xs text-gray-500">
+              Map data from OpenStreetMap
+            </p>
+          </article>
+        </div>
         </div>
       </section>
     </main>

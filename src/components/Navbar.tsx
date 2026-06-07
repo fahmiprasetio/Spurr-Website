@@ -223,7 +223,7 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="fixed left-0 right-0 top-0 z-60 flex justify-center pointer-events-none">
+      <div className="fixed left-0 right-0 top-0 z-[9999] flex justify-center pointer-events-none">
         <div
           className="pointer-events-auto"
           style={{
@@ -326,7 +326,7 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen ? (
           <motion.div
-            className="fixed left-0 right-0 z-50 flex justify-center"
+            className="fixed left-0 right-0 z-[9998] flex justify-center"
             initial={{ opacity: 0, y: "-0.75rem" }}
             animate={{ opacity: 1, y: "0rem" }}
             exit={{ opacity: 0, y: "-0.5rem" }}
