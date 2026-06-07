@@ -464,7 +464,7 @@ export default function CarCard({
       }}
     >
       <div
-        className="relative overflow-hidden border border-gray-200 shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-gray-300 hover:shadow-[0_10px_24px_rgba(0,0,0,0.12)]"
+        className="relative overflow-hidden border border-gray-200 shadow-md transition-[border-color,box-shadow] duration-300 hover:border-gray-300 hover:shadow-[0_10px_24px_rgba(0,0,0,0.12)]"
         style={{ borderRadius: "12px", background: "#e8e8e8" }}
       >
         {/* Brand tag */}
@@ -554,79 +554,79 @@ export default function CarCard({
               marginInline: "auto",
             }}
           >
-          <div className="flex items-end justify-between mb-3" style={{ columnGap: "1rem" }}>
-            <div>
-              <h3 className="text-lg font-semibold text-black tracking-tight">
-                {car.name}
-              </h3>
-              <p className="text-xs text-gray-400 mt-1 tracking-wider uppercase">
-                {car.brand}
-              </p>
+            <div className="flex items-end justify-between mb-3" style={{ columnGap: "1rem" }}>
+              <div>
+                <h3 className="text-lg font-semibold text-black tracking-tight">
+                  {car.name}
+                </h3>
+                <p className="text-xs text-gray-400 mt-1 tracking-wider uppercase">
+                  {car.brand}
+                </p>
+              </div>
+              <motion.div
+                animate={{
+                  x: showDetails ? 0 : -5,
+                  opacity: showDetails ? 1 : 0,
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                <svg
+                  className="w-5 h-5 text-black"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </motion.div>
             </div>
+
+            {/* Specs - visible on hover */}
             <motion.div
               animate={{
-                x: showDetails ? 0 : -5,
+                height: showDetails ? "auto" : 0,
                 opacity: showDetails ? 1 : 0,
               }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className="overflow-hidden"
             >
-              <svg
-                className="w-5 h-5 text-black"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </motion.div>
-          </div>
-
-          {/* Specs - visible on hover */}
-          <motion.div
-            animate={{
-              height: showDetails ? "auto" : 0,
-              opacity: showDetails ? 1 : 0,
-            }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-gray-100 pt-4 mt-2">
-              <p className="text-xs text-gray-500 leading-relaxed mb-4">
-                {car.description}
-              </p>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-black">
-                    {car.power}
-                  </p>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">
-                    Power
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-black">
-                    {car.topSpeed}
-                  </p>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">
-                    Top Speed
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-black">
-                    {car.acceleration}
-                  </p>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">
-                    0-100
-                  </p>
+              <div className="border-t border-gray-100 pt-4 mt-2">
+                <p className="text-xs text-gray-500 leading-relaxed mb-4">
+                  {car.description}
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-black">
+                      {car.power}
+                    </p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">
+                      Power
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-black">
+                      {car.topSpeed}
+                    </p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">
+                      Top Speed
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-black">
+                      {car.acceleration}
+                    </p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">
+                      0-100
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
           </div>
         </div>
       </div>
