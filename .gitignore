@@ -40,6 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# editor (local only)
+.vscode/
+
 # copilot agent skills & customizations (local only)
 .agents/
 .understand-anything/
