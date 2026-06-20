@@ -4,7 +4,7 @@
 
 **A premium luxury car rental platform with a cinematic, gallery-grade browsing experience.**
 
-Spurr pairs editorial-quality visuals — frame-by-frame car animations, parallax storytelling, and an interactive showroom map — with a complete rental workflow, from discovery and booking to secure payment and fulfillment.
+Spurr pairs editorial-quality visuals — frame-by-frame car animations, parallax storytelling, and an interactive showroom map — with a complete rental workflow, from discovery and booking to payment and fulfillment.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -19,35 +19,34 @@ Spurr pairs editorial-quality visuals — frame-by-frame car animations, paralla
 
 ## Overview
 
-Spurr is a full-stack web application built around two audiences: customers browsing and renting high-end vehicles, and administrators managing inventory and fulfilling reservations. The front end is engineered for a high-fidelity, motion-rich experience, while the back end provides authentication, a relational data model, a rental lifecycle, and an integrated payment flow.
+Spurr is a full-stack web application built around two audiences: customers browsing and renting high-end vehicles, and administrators managing inventory and fulfilling reservations. The front end delivers a high-fidelity, motion-rich experience, while the back end handles authentication, the data model, the rental lifecycle, and payments.
 
-## Key Features
+## Features
 
 ### For Customers
-- **Cinematic showroom** — luxury cars presented with frame-sequence animations and parallax effects for a showroom-quality feel.
-- **Detailed car profiles** — specifications, performance figures, imagery, and availability for each vehicle.
-- **End-to-end rentals** — select dates, review pricing, and confirm a booking with an integrated payment flow.
-- **Wishlist & saved cars** — bookmark vehicles and revisit them later.
-- **Account & notifications** — personal profile, rental history, and status updates.
-- **Interactive map** — explore showroom and pickup locations via an embedded map.
+- Cinematic showroom with frame-sequence animations and parallax effects
+- Detailed car profiles with specifications and imagery
+- End-to-end rental booking and payment flow
+- Wishlist / saved cars
+- Account, rental history, and notifications
+- Interactive showroom and location map
 
 ### For Administrators
-- **Inventory management** — maintain the vehicle catalog and brand data.
-- **Rental operations** — review reservations and move them through their lifecycle, with an auditable status history.
-- **User management** — oversee customer accounts and roles.
+- Vehicle and brand inventory management
+- Rental operations with an auditable status history
+- User and role management
 
 ## Tech Stack
 
-| Layer | Technology | Role |
-| --- | --- | --- |
-| Framework | **Next.js 16** (App Router) | Server-rendered React, routing, and API routes |
-| UI | **React 19**, **TypeScript** | Component architecture with end-to-end type safety |
-| Styling | **Tailwind CSS 4** | Utility-first, design-system-driven styling |
-| Motion | **Framer Motion** | Frame-sequence animations and parallax interactions |
-| Mapping | **Leaflet** + **React Leaflet** | Interactive showroom and location maps |
-| Data | **PostgreSQL** + **Prisma ORM** | Type-safe relational data access and migrations |
-| Auth | **Session-based authentication** | Secure sessions backed by httpOnly cookies |
-| Payments | **Midtrans** | Payment gateway for the rental checkout flow |
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Framer Motion
+- Leaflet & React Leaflet
+- PostgreSQL
+- Prisma ORM
+- Midtrans
 
 ## Project Structure
 
@@ -73,8 +72,8 @@ prisma/
 
 ### Prerequisites
 
-- **Node.js 18+**
-- A **PostgreSQL** database
+- Node.js 18+
+- A PostgreSQL database
 
 ### Installation
 
