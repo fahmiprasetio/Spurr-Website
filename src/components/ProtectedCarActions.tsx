@@ -224,13 +224,13 @@ export default function ProtectedCarActions({
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href="/login"
+                href="/sign-in"
                 className="border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.16em] text-white hover:bg-white hover:text-black"
               >
                 Sign in
               </Link>
               <Link
-                href="/register"
+                href="/sign-up"
                 className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:border-black hover:bg-black hover:text-white"
               >
                 Create account
