@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { validateEntityId } from "@/lib/validation";
 
 type WishlistAction = "add" | "remove" | "toggle";
 
@@ -10,6 +12,9 @@ function isWishlistAction(value: string): value is WishlistAction {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimited = checkRateLimit(request, "mutation");
+  if (rateLimited) return rateLimited;
+
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
@@ -23,18 +28,22 @@ export async function POST(request: NextRequest) {
     | { carId?: string; action?: string }
     | null;
 
-  const carId = typeof body?.carId === "string" ? body.carId.trim() : "";
-  const actionRaw = typeof body?.action === "string" ? body.action.trim().toLowerCase() : "toggle";
-
-  if (!carId) {
-    return NextResponse.json({ error: "carId is required." }, { status: 400 });
+  const carIdValidation = validateEntityId(body?.carId, "carId");
+  if (!carIdValidation.ok) {
+    return NextResponse.json(
+      { error: carIdValidation.error },
+      { status: carIdValidation.status }
+    );
   }
+
+  const actionRaw = typeof body?.action === "string" ? body.action.trim().toLowerCase() : "toggle";
 
   if (!isWishlistAction(actionRaw)) {
     return NextResponse.json({ error: "Invalid wishlist action." }, { status: 400 });
   }
 
   const action: WishlistAction = actionRaw;
+  const carId = carIdValidation.data;
 
   const targetCar = await prisma.car.findUnique({
     where: { id: carId },

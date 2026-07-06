@@ -5,36 +5,40 @@ import {
   createSession,
   getSessionCookieOptions,
   hashPassword,
-  normalizeEmail,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth";
-
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+import { checkRateLimit } from "@/lib/rate-limit";
+import { normalizeStringInput, validateEmail, validateName, validatePassword } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
+  const rateLimited = checkRateLimit(request, "auth");
+  if (rateLimited) return rateLimited;
+
   try {
     const body = await request.json().catch(() => null) as
       | { name?: string; email?: string; password?: string }
       | null;
 
-    const name = typeof body?.name === "string" ? body.name.trim() : "";
-    const email = typeof body?.email === "string" ? normalizeEmail(body.email) : "";
-    const password = typeof body?.password === "string" ? body.password : "";
-
-    if (!isValidEmail(email)) {
-      return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
+    const nameValidation = validateName(normalizeStringInput(body?.name));
+    if (!nameValidation.ok) {
+      return NextResponse.json({ error: nameValidation.error }, { status: nameValidation.status });
     }
 
-    if (password.length < 8) {
+    const emailValidation = validateEmail(normalizeStringInput(body?.email));
+    if (!emailValidation.ok) {
+      return NextResponse.json({ error: emailValidation.error }, { status: emailValidation.status });
+    }
+
+    const password = typeof body?.password === "string" ? body.password : "";
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.ok) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters." },
-        { status: 400 }
+        { error: passwordValidation.error },
+        { status: passwordValidation.status }
       );
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({ where: { email: emailValidation.data } });
 
     if (existingUser) {
       return NextResponse.json(
@@ -47,9 +51,9 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.create({
       data: {
-        name: name || null,
-        email,
-        passwordHash: hashPassword(password),
+        name: nameValidation.data,
+        email: emailValidation.data,
+        passwordHash: hashPassword(passwordValidation.data),
         role: userCount === 0 ? "ADMIN" : "USER",
       },
     });
@@ -86,38 +90,21 @@ export async function POST(request: NextRequest) {
       );
 
     if (isDbConnectionIssue) {
-      if (process.env.NODE_ENV !== "production") {
-        return NextResponse.json(
-          {
-            error:
-              "Database is currently unreachable. Please try again shortly or verify the database connection.",
-            detail: errorMessage,
-          },
-          { status: 503 }
-        );
-      }
-
       return NextResponse.json(
         {
           error:
             "Database is currently unreachable. Please try again shortly or verify the database connection.",
+          ...(process.env.NODE_ENV !== "production" ? { detail: errorMessage } : {}),
         },
         { status: 503 }
       );
     }
 
-    if (process.env.NODE_ENV !== "production") {
-      return NextResponse.json(
-        {
-          error: "A server error occurred during sign up.",
-          detail: errorMessage,
-        },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
-      { error: "A server error occurred during sign up." },
+      {
+        error: "A server error occurred during sign up.",
+        ...(process.env.NODE_ENV !== "production" ? { detail: errorMessage } : {}),
+      },
       { status: 500 }
     );
   }

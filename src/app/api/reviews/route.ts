@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { validateEntityId, validateReviewComment } from "@/lib/validation";
 
 function formatUserName(name: string | null, email: string): string {
   if (name && name.trim().length > 0) {
@@ -12,15 +14,22 @@ function formatUserName(name: string | null, email: string): string {
 }
 
 export async function GET(request: NextRequest) {
-  const carId = request.nextUrl.searchParams.get("carId")?.trim() || "";
+  const rateLimited = checkRateLimit(request, "read");
+  if (rateLimited) return rateLimited;
 
-  if (!carId) {
-    return NextResponse.json({ error: "carId is required." }, { status: 400 });
+  const carIdValidation = validateEntityId(request.nextUrl.searchParams.get("carId"), "carId");
+
+  if (!carIdValidation.ok) {
+    return NextResponse.json(
+      { error: carIdValidation.error },
+      { status: carIdValidation.status }
+    );
   }
 
   const reviews = await prisma.carReview.findMany({
-    where: { carId },
+    where: { carId: carIdValidation.data },
     orderBy: { createdAt: "desc" },
+    take: 50,
     include: {
       user: {
         select: {
@@ -43,6 +52,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimited = checkRateLimit(request, "mutation");
+  if (rateLimited) return rateLimited;
+
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
@@ -56,26 +68,24 @@ export async function POST(request: NextRequest) {
     | { carId?: string; comment?: string }
     | null;
 
-  const carId = typeof payload?.carId === "string" ? payload.carId.trim() : "";
-  const comment = typeof payload?.comment === "string" ? payload.comment.trim() : "";
-
-  if (!carId) {
-    return NextResponse.json({ error: "carId is required." }, { status: 400 });
-  }
-
-  if (!comment) {
+  const carIdValidation = validateEntityId(payload?.carId, "carId");
+  if (!carIdValidation.ok) {
     return NextResponse.json(
-      { error: "Please write a comment before submitting." },
-      { status: 400 }
+      { error: carIdValidation.error },
+      { status: carIdValidation.status }
     );
   }
 
-  if (comment.length > 600) {
+  const commentValidation = validateReviewComment(payload?.comment);
+  if (!commentValidation.ok) {
     return NextResponse.json(
-      { error: "Comment is too long. Maximum 600 characters." },
-      { status: 400 }
+      { error: commentValidation.error },
+      { status: commentValidation.status }
     );
   }
+
+  const carId = carIdValidation.data;
+  const comment = commentValidation.data;
 
   const targetCar = await prisma.car.findUnique({
     where: { id: carId },

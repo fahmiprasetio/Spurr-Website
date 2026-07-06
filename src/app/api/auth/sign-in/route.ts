@@ -8,8 +8,13 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { hasAdminAccess } from "@/lib/auth-server";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { validateEmail } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
+  const rateLimited = checkRateLimit(request, "auth");
+  if (rateLimited) return rateLimited;
+
   try {
     const body = await request.json().catch(() => null) as
       | { email?: string; password?: string }
@@ -17,15 +22,16 @@ export async function POST(request: NextRequest) {
 
     const email = typeof body?.email === "string" ? normalizeEmail(body.email) : "";
     const password = typeof body?.password === "string" ? body.password : "";
+    const emailValidation = validateEmail(email);
 
-    if (!email || !password) {
+    if (!emailValidation.ok || !password) {
       return NextResponse.json(
         { error: "Email and password are required." },
         { status: 400 }
       );
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: emailValidation.data } });
 
     if (!user || !verifyPassword(password, user.passwordHash)) {
       return NextResponse.json(
