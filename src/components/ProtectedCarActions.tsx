@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 type WishlistFeedback = {
   type: "success" | "error";
@@ -22,19 +23,41 @@ export default function ProtectedCarActions({
   isSignedIn,
 }: ProtectedCarActionsProps) {
   const router = useRouter();
+  const dialogTitleId = useId();
+  const dialogDescriptionId = useId();
   const [inWishlist, setInWishlist] = useState(initialInWishlist);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<WishlistFeedback | null>(null);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
-  function showSignInPopup() {
-    const message = "You need to sign in before using this feature.";
-    window.alert(message);
+  function showSignInModal() {
+    const message = "Please sign in before using this feature.";
     setFeedback({ type: "error", message });
+    setIsSignInModalOpen(true);
   }
+
+  function closeSignInModal() {
+    setIsSignInModalOpen(false);
+  }
+
+  useEffect(() => {
+    if (!isSignInModalOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeSignInModal();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isSignInModalOpen]);
 
   function handleRentClick() {
     if (!isSignedIn) {
-      showSignInPopup();
+      showSignInModal();
       return;
     }
 
@@ -43,7 +66,7 @@ export default function ProtectedCarActions({
 
   async function handleSaveClick() {
     if (!isSignedIn) {
-      showSignInPopup();
+      showSignInModal();
       return;
     }
 
@@ -67,7 +90,7 @@ export default function ProtectedCarActions({
 
       if (!response.ok) {
         if (response.status === 401) {
-          showSignInPopup();
+          showSignInModal();
           return;
         }
 
@@ -162,6 +185,66 @@ export default function ProtectedCarActions({
         <p className={`text-xs ${feedback.type === "success" ? "text-emerald-700" : "text-red-600"}`}>
           {feedback.message}
         </p>
+      ) : null}
+
+      {isSignInModalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={dialogTitleId}
+          aria-describedby={dialogDescriptionId}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeSignInModal();
+            }
+          }}
+        >
+          <div className="w-full max-w-md border border-white/10 bg-white p-6 text-black shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">Members only</p>
+                <h2 id={dialogTitleId} className="mt-2 text-2xl font-semibold tracking-tight">
+                  Sign in to continue
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeSignInModal}
+                aria-label="Close sign in prompt"
+                className="inline-flex h-9 w-9 items-center justify-center border border-black/10 text-lg leading-none hover:bg-black hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+
+            <p id={dialogDescriptionId} className="mt-4 text-sm leading-relaxed text-gray-600">
+              Please sign in first to rent this car or save it to your wishlist. After signing in, you can continue from this vehicle page.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/login"
+                className="border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.16em] text-white hover:bg-white hover:text-black"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className="border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:border-black hover:bg-black hover:text-white"
+              >
+                Create account
+              </Link>
+              <button
+                type="button"
+                onClick={closeSignInModal}
+                className="px-4 py-2 text-xs uppercase tracking-[0.16em] text-gray-500 hover:text-black"
+              >
+                Stay here
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );
