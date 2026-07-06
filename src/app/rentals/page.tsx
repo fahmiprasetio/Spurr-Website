@@ -164,45 +164,36 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
     const endDateValue = formData.get("endDate");
     const notesValue = formData.get("notes");
 
-    const failRedirect = (code: string): never => {
-      const params = new URLSearchParams();
-      params.set("error", code);
-      if (typeof carId === "string" && carId) {
-        params.set("carId", carId);
-      }
-      if (typeof startDateValue === "string" && startDateValue) {
-        params.set("start", startDateValue);
-      }
-      if (typeof endDateValue === "string" && endDateValue) {
-        params.set("end", endDateValue);
-      }
-      redirect(`/rentals?${params.toString()}`);
-    };
-
     if (
       typeof carId !== "string" ||
       typeof startDateValue !== "string" ||
       typeof endDateValue !== "string"
     ) {
-      failRedirect("invalid-input");
+      redirect("/rentals?error=invalid-input");
     }
+
+    const preserved = new URLSearchParams({
+      carId,
+      start: startDateValue,
+      end: endDateValue,
+    }).toString();
 
     const startDate = parseDateInput(startDateValue);
     const endDate = parseDateInput(endDateValue);
     const notes = typeof notesValue === "string" ? notesValue.trim() : "";
 
     if (!startDate || !endDate || endDate < startDate) {
-      failRedirect("invalid-date-range");
+      redirect(`/rentals?error=invalid-date-range&${preserved}`);
     }
 
     const todayUtc = new Date();
     todayUtc.setUTCHours(0, 0, 0, 0);
     if (startDate < todayUtc) {
-      failRedirect("start-date-past");
+      redirect(`/rentals?error=start-date-past&${preserved}`);
     }
 
     if (notes.length > 500) {
-      failRedirect("notes-too-long");
+      redirect(`/rentals?error=notes-too-long&${preserved}`);
     }
 
     const car = await prisma.car.findUnique({
@@ -216,11 +207,11 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
     });
 
     if (!car) {
-      failRedirect("car-not-found");
+      redirect(`/rentals?error=car-not-found&${preserved}`);
     }
 
     if (car.status === "INACTIVE" || car.status === "MAINTENANCE") {
-      failRedirect("car-unavailable");
+      redirect(`/rentals?error=car-unavailable&${preserved}`);
     }
 
     const overlappingRental = await prisma.rental.findFirst({
@@ -234,7 +225,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
     });
 
     if (overlappingRental) {
-      failRedirect("car-unavailable");
+      redirect(`/rentals?error=car-unavailable&${preserved}`);
     }
 
     const totalDays = calculateRentalDays(startDate, endDate);
@@ -289,9 +280,9 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
 
     if (!transactionResult.ok) {
       if (transactionResult.reason === "overlap") {
-        failRedirect("car-unavailable");
+        redirect(`/rentals?error=car-unavailable&${preserved}`);
       }
-      failRedirect("rental-create-failed");
+      redirect(`/rentals?error=rental-create-failed&${preserved}`);
     }
 
     const { rental, payment } = transactionResult;
@@ -683,6 +674,14 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                         {rental.payment?.status === "PAID" ? (
                           <p className="text-xs uppercase tracking-[0.14em] text-emerald-600">
                             Payment completed
+                          </p>
+                        ) : rental.status === "CANCELLED" ? (
+                          <p className="text-xs uppercase tracking-[0.14em] text-red-600">
+                            Booking cancelled
+                          </p>
+                        ) : rental.status === "COMPLETED" ? (
+                          <p className="text-xs uppercase tracking-[0.14em] text-gray-600">
+                            Completed
                           </p>
                         ) : (
                           <p className="text-xs uppercase tracking-[0.14em] text-gray-500">
