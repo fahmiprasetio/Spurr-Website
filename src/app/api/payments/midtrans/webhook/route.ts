@@ -14,7 +14,7 @@ import {
 } from "@/lib/midtrans";
 import { prisma } from "@/lib/prisma";
 
-const ACTIVE_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED", "ACTIVE"];
+const BLOCKING_RENTAL_STATUSES: RentalStatus[] = ["CONFIRMED", "ACTIVE"];
 
 const RENTAL_STATUS_LABEL: Record<RentalStatus, string> = {
   PENDING: "Awaiting Payment",
@@ -112,188 +112,223 @@ export async function POST(request: NextRequest) {
     },
   };
 
-  const transactionResult = await prisma
-    .$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${orderId}))`;
+  const transactionResult: WebhookTransactionResult = await prisma
+    .$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${orderId}))`;
 
-      const existingEvent = await tx.paymentWebhookEvent.findUnique({
-        where: { eventKey },
-        select: {
-          id: true,
-          processingStatus: true,
-        },
-      });
-
-      const eventRecord = existingEvent
-        ? await tx.paymentWebhookEvent.update({
-            where: { id: existingEvent.id },
-            data: {
-              receivedCount: {
-                increment: 1,
-              },
-              lastReceivedAt: new Date(),
-              transactionStatus: transactionStatus || null,
-              mappedStatus: candidatePaymentStatus,
-              payload: auditPayload,
-            },
-          })
-        : await tx.paymentWebhookEvent.create({
-            data: {
-              provider: "MIDTRANS",
-              orderId,
-              eventKey,
-              transactionStatus: transactionStatus || null,
-              mappedStatus: candidatePaymentStatus,
-              payload: auditPayload,
-            },
-          });
-
-      if (existingEvent?.processingStatus === "PROCESSED") {
-        const existingPayment = await tx.payment.findUnique({
-          where: { transactionRef: orderId },
-          select: { status: true },
+        const existingEvent = await tx.paymentWebhookEvent.findUnique({
+          where: { eventKey },
+          select: {
+            id: true,
+            processingStatus: true,
+          },
         });
 
-        return {
-          kind: "duplicate" as const,
-          orderId,
-          paymentStatus: existingPayment?.status ?? candidatePaymentStatus,
-        };
-      }
+        const eventRecord = existingEvent
+          ? await tx.paymentWebhookEvent.update({
+              where: { id: existingEvent.id },
+              data: {
+                receivedCount: {
+                  increment: 1,
+                },
+                lastReceivedAt: new Date(),
+                transactionStatus: transactionStatus || null,
+                mappedStatus: candidatePaymentStatus,
+                payload: auditPayload,
+              },
+            })
+          : await tx.paymentWebhookEvent.create({
+              data: {
+                provider: "MIDTRANS",
+                orderId,
+                eventKey,
+                transactionStatus: transactionStatus || null,
+                mappedStatus: candidatePaymentStatus,
+                payload: auditPayload,
+              },
+            });
 
-      const payment = await tx.payment.findUnique({
-        where: { transactionRef: orderId },
-        include: {
-          rental: {
-            select: {
-              id: true,
-              userId: true,
-              status: true,
-              carId: true,
-              car: {
-                select: {
-                  name: true,
-                  status: true,
+        if (existingEvent?.processingStatus === "PROCESSED") {
+          const existingPayment = await tx.payment.findUnique({
+            where: { transactionRef: orderId },
+            select: { status: true },
+          });
+
+          return {
+            kind: "duplicate" as const,
+            orderId,
+            paymentStatus: existingPayment?.status ?? candidatePaymentStatus,
+          };
+        }
+
+        const payment = await tx.payment.findUnique({
+          where: { transactionRef: orderId },
+          include: {
+            rental: {
+              select: {
+                id: true,
+                userId: true,
+                status: true,
+                carId: true,
+                startDate: true,
+                endDate: true,
+                car: {
+                  select: {
+                    name: true,
+                    status: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
+        });
 
-      if (!payment) {
+        if (!payment) {
+          await tx.paymentWebhookEvent.update({
+            where: { id: eventRecord.id },
+            data: {
+              processingStatus: "FAILED",
+              errorMessage: "Payment not found for order_id.",
+            },
+          });
+
+          return { kind: "not-found" as const, orderId };
+        }
+
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"car:" + payment.rental.carId}))`;
+
+        const nextPaymentStatus = resolvePaymentStatusTransition(
+          payment.status,
+          candidatePaymentStatus
+        );
+        const paymentStatusChanged = nextPaymentStatus !== payment.status;
+        const shouldSetPaidAt = nextPaymentStatus === "PAID" && !payment.paidAt;
+
+        if (paymentStatusChanged || shouldSetPaidAt) {
+          await tx.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: nextPaymentStatus,
+              ...(shouldSetPaidAt ? { paidAt: new Date() } : {}),
+            },
+          });
+        }
+
+        let nextRentalStatus = payment.rental.status;
+
+        if (nextPaymentStatus === "PAID" && payment.rental.status === "PENDING") {
+          const conflictingRental = await tx.rental.findFirst({
+            where: {
+              carId: payment.rental.carId,
+              id: { not: payment.rental.id },
+              status: { in: BLOCKING_RENTAL_STATUSES },
+              startDate: { lte: payment.rental.endDate },
+              endDate: { gte: payment.rental.startDate },
+            },
+            select: { id: true },
+          });
+
+          if (conflictingRental) {
+            nextRentalStatus = "CANCELLED";
+          } else {
+            nextRentalStatus = "CONFIRMED";
+          }
+        }
+
+        const shouldCancelPendingRental =
+          payment.rental.status === "PENDING" &&
+          (isMidtransTerminalFailure(payload) || nextPaymentStatus === "REFUNDED");
+
+        if (shouldCancelPendingRental) {
+          nextRentalStatus = "CANCELLED";
+        }
+
+        if (nextPaymentStatus === "REFUNDED" && payment.rental.status === "CONFIRMED") {
+          nextRentalStatus = "CANCELLED";
+        }
+
+        const rentalStatusChanged = nextRentalStatus !== payment.rental.status;
+
+        if (rentalStatusChanged) {
+          await tx.rental.update({
+            where: { id: payment.rental.id },
+            data: { status: nextRentalStatus },
+          });
+        }
+
+        if (nextRentalStatus === "CONFIRMED") {
+          await tx.rental.updateMany({
+            where: {
+              carId: payment.rental.carId,
+              id: { not: payment.rental.id },
+              status: "PENDING",
+              startDate: { lte: payment.rental.endDate },
+              endDate: { gte: payment.rental.startDate },
+            },
+            data: { status: "CANCELLED" },
+          });
+        }
+
+        const shouldKeepCarBooked = BLOCKING_RENTAL_STATUSES.includes(nextRentalStatus);
+
+        if (shouldKeepCarBooked) {
+          await tx.car.updateMany({
+            where: {
+              id: payment.rental.carId,
+              status: "AVAILABLE",
+            },
+            data: {
+              status: "BOOKED",
+            },
+          });
+        } else if (payment.rental.car.status === "BOOKED") {
+          const hasOtherActiveRentals = await tx.rental.findFirst({
+            where: {
+              carId: payment.rental.carId,
+              id: { not: payment.rental.id },
+              status: { in: BLOCKING_RENTAL_STATUSES },
+            },
+            select: { id: true },
+          });
+
+          if (!hasOtherActiveRentals) {
+            await tx.car.update({
+              where: { id: payment.rental.carId },
+              data: { status: "AVAILABLE" },
+            });
+          }
+        }
+
         await tx.paymentWebhookEvent.update({
           where: { id: eventRecord.id },
           data: {
-            processingStatus: "FAILED",
-            errorMessage: "Payment not found for order_id.",
+            paymentId: payment.id,
+            mappedStatus: nextPaymentStatus,
+            processingStatus: "PROCESSED",
+            processedAt: new Date(),
+            errorMessage: null,
           },
         });
 
-        return { kind: "not-found" as const, orderId };
+        return {
+          kind: "processed" as const,
+          orderId,
+          userId: payment.userId,
+          carName: payment.rental.car.name,
+          amount: payment.amount,
+          transactionRef: payment.transactionRef,
+          previousPaymentStatus: payment.status,
+          nextPaymentStatus,
+          previousRentalStatus: payment.rental.status,
+          nextRentalStatus,
+        };
+      },
+      {
+        maxWait: 10_000,
+        timeout: 20_000,
       }
-
-      const nextPaymentStatus = resolvePaymentStatusTransition(
-        payment.status,
-        candidatePaymentStatus
-      );
-      const paymentStatusChanged = nextPaymentStatus !== payment.status;
-      const shouldSetPaidAt = nextPaymentStatus === "PAID" && !payment.paidAt;
-
-      if (paymentStatusChanged || shouldSetPaidAt) {
-        await tx.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: nextPaymentStatus,
-            ...(shouldSetPaidAt ? { paidAt: new Date() } : {}),
-          },
-        });
-      }
-
-      let nextRentalStatus = payment.rental.status;
-
-      if (nextPaymentStatus === "PAID" && payment.rental.status === "PENDING") {
-        nextRentalStatus = "CONFIRMED";
-      }
-
-      const shouldCancelPendingRental =
-        payment.rental.status === "PENDING" &&
-        (isMidtransTerminalFailure(payload) || nextPaymentStatus === "REFUNDED");
-
-      if (shouldCancelPendingRental) {
-        nextRentalStatus = "CANCELLED";
-      }
-
-      if (nextPaymentStatus === "REFUNDED" && payment.rental.status === "CONFIRMED") {
-        nextRentalStatus = "CANCELLED";
-      }
-
-      const rentalStatusChanged = nextRentalStatus !== payment.rental.status;
-
-      if (rentalStatusChanged) {
-        await tx.rental.update({
-          where: { id: payment.rental.id },
-          data: { status: nextRentalStatus },
-        });
-      }
-
-      const shouldKeepCarBooked = ACTIVE_RENTAL_STATUSES.includes(nextRentalStatus);
-
-      if (shouldKeepCarBooked) {
-        await tx.car.updateMany({
-          where: {
-            id: payment.rental.carId,
-            status: "AVAILABLE",
-          },
-          data: {
-            status: "BOOKED",
-          },
-        });
-      } else if (payment.rental.car.status === "BOOKED") {
-        const hasOtherActiveRentals = await tx.rental.findFirst({
-          where: {
-            carId: payment.rental.carId,
-            id: { not: payment.rental.id },
-            status: { in: ACTIVE_RENTAL_STATUSES },
-          },
-          select: { id: true },
-        });
-
-        if (!hasOtherActiveRentals) {
-          await tx.car.update({
-            where: { id: payment.rental.carId },
-            data: { status: "AVAILABLE" },
-          });
-        }
-      }
-
-      await tx.paymentWebhookEvent.update({
-        where: { id: eventRecord.id },
-        data: {
-          paymentId: payment.id,
-          mappedStatus: nextPaymentStatus,
-          processingStatus: "PROCESSED",
-          processedAt: new Date(),
-          errorMessage: null,
-        },
-      });
-
-      return {
-        kind: "processed" as const,
-        orderId,
-        userId: payment.userId,
-        carName: payment.rental.car.name,
-        amount: payment.amount,
-        transactionRef: payment.transactionRef,
-        previousPaymentStatus: payment.status,
-        nextPaymentStatus,
-        previousRentalStatus: payment.rental.status,
-        nextRentalStatus,
-      };
-    }, {
-      maxWait: 10_000,
-      timeout: 20_000,
-    })
+    )
     .catch((error) => {
       console.error("midtrans webhook transaction failed:", error);
       const errorMessage = toErrorMessage(error).slice(0, 600);

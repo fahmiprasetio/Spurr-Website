@@ -19,7 +19,7 @@ import { prisma } from "@/lib/prisma";
 import SnapPaymentHandler from "@/components/SnapPaymentHandler";
 import RentalDateFields from "@/components/RentalDateFields";
 
-const ACTIVE_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED", "ACTIVE"];
+const BLOCKING_RENTAL_STATUSES: RentalStatus[] = ["CONFIRMED", "ACTIVE"];
 const CANCELLABLE_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED"];
 const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
   "BANK_TRANSFER",
@@ -141,7 +141,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
       ? await prisma.rental.findMany({
           where: {
             carId: lockedCar.id,
-            status: { in: ACTIVE_RENTAL_STATUSES },
+            status: { in: BLOCKING_RENTAL_STATUSES },
           },
           select: { startDate: true, endDate: true },
           orderBy: { startDate: "asc" },
@@ -234,7 +234,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
     const overlappingRental = await prisma.rental.findFirst({
       where: {
         carId: car.id,
-        status: { in: ACTIVE_RENTAL_STATUSES },
+        status: { in: BLOCKING_RENTAL_STATUSES },
         startDate: { lte: endDate },
         endDate: { gte: startDate },
       },
@@ -272,16 +272,6 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
             method: "BANK_TRANSFER",
             status: "PENDING",
             transactionRef: createTransactionReference(),
-          },
-        });
-
-        await tx.car.updateMany({
-          where: {
-            id: car.id,
-            status: "AVAILABLE",
-          },
-          data: {
-            status: "BOOKED",
           },
         });
 
@@ -382,6 +372,21 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
       redirect("/rentals?error=payment-gateway-unavailable");
     }
 
+    const conflictingRental = await prisma.rental.findFirst({
+      where: {
+        carId: rental.carId,
+        id: { not: rental.id },
+        status: { in: BLOCKING_RENTAL_STATUSES },
+        startDate: { lte: rental.endDate },
+        endDate: { gte: rental.startDate },
+      },
+      select: { id: true },
+    });
+
+    if (conflictingRental) {
+      redirect("/rentals?error=car-unavailable");
+    }
+
     const transactionResult = await prisma
       .$transaction(async (tx) => {
         const updatedPayment = await tx.payment.update({
@@ -468,7 +473,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
             where: {
               carId: rental.car.id,
               id: { not: rental.id },
-              status: { in: ACTIVE_RENTAL_STATUSES },
+              status: { in: BLOCKING_RENTAL_STATUSES },
             },
             select: { id: true },
           });
@@ -619,7 +624,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                         {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
                           rental.endDate,
                         )}
-                        {" • "}
+                        {" | "}
                         {rental.totalDays} days
                       </p>
                       <p className="mt-1 text-sm text-gray-500">
