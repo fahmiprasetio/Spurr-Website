@@ -249,13 +249,19 @@ export async function createMidtransSnapTransaction(
 
   const authToken = Buffer.from(`${config.serverKey}:`).toString("base64");
 
+  const requestHeaders: Record<string, string> = {
+    Authorization: `Basic ${authToken}`,
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+
+  if (config.appBaseUrl) {
+    requestHeaders["X-Append-Notification"] = `${config.appBaseUrl}/api/payments/midtrans/webhook`;
+  }
+
   const response = await fetch(`${config.apiBaseUrl}/snap/v1/transactions`, {
     method: "POST",
-    headers: {
-      Authorization: `Basic ${authToken}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: requestHeaders,
     body: JSON.stringify(requestBody),
     cache: "no-store",
   });
