@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 type RentalDateFieldsProps = {
   todayMinDate: string;
   dailyRate: number | null;
+  initialStart?: string;
+  initialEnd?: string;
 };
 
 function formatRupiah(value: number): string {
@@ -28,9 +30,14 @@ function countRentalDays(start: string, end: string): number {
   return Math.floor((endTime - startTime) / 86400000) + 1;
 }
 
-export default function RentalDateFields({ todayMinDate, dailyRate }: RentalDateFieldsProps) {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+export default function RentalDateFields({
+  todayMinDate,
+  dailyRate,
+  initialStart,
+  initialEnd,
+}: RentalDateFieldsProps) {
+  const [startDate, setStartDate] = useState(initialStart ?? "");
+  const [endDate, setEndDate] = useState(initialEnd ?? "");
 
   const days = useMemo(() => countRentalDays(startDate, endDate), [startDate, endDate]);
   const total = dailyRate !== null && days > 0 ? dailyRate * days : null;
