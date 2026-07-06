@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@prisma/client": "6.9.0",
+    "@supabase/supabase-js": "^2.45.0",
     "framer-motion": "^12.38.0",
     "leaflet": "^1.9.4",
     "next": "16.1.6",
