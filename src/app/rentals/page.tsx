@@ -136,6 +136,23 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
       })
     : null;
 
+  const lockedCarBookedRangesRaw =
+    isFormMode && lockedCar
+      ? await prisma.rental.findMany({
+          where: {
+            carId: lockedCar.id,
+            status: { in: ACTIVE_RENTAL_STATUSES },
+          },
+          select: { startDate: true, endDate: true },
+          orderBy: { startDate: "asc" },
+        })
+      : [];
+
+  const lockedCarBookedRanges = lockedCarBookedRangesRaw.map((rental) => ({
+    start: rental.startDate.toISOString().slice(0, 10),
+    end: rental.endDate.toISOString().slice(0, 10),
+  }));
+
   const rentals = isFormMode
     ? []
     : await prisma.rental.findMany({
@@ -541,7 +558,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                     <input type="hidden" name="carId" value={lockedCar.id} />
                     {lockedCarUnavailable ? (
                       <p className="mt-2 text-xs text-red-600">
-                        This car is currently unavailable for the selected period.
+                        This car is currently marked unavailable by the operator.
                       </p>
                     ) : null}
                   </div>
@@ -551,25 +568,9 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                     dailyRate={lockedDailyRate}
                     initialStart={resolvedSearchParams.start ?? ""}
                     initialEnd={resolvedSearchParams.end ?? ""}
+                    bookedRanges={lockedCarBookedRanges}
+                    carUnavailable={lockedCarUnavailable}
                   />
-
-                  <label className="text-sm text-gray-600">
-                    Notes (optional)
-                    <textarea
-                      name="notes"
-                      rows={3}
-                      maxLength={500}
-                      className="mt-2 w-full border border-black/20 px-3 py-2 outline-none focus:border-black"
-                      placeholder="Example: prefer a dark-colored unit"
-                    />
-                  </label>
-
-                  <button
-                    type="submit"
-                    className="mt-2 border border-black bg-black px-4 py-3 text-xs uppercase tracking-[0.2em] text-white hover:bg-white hover:text-black"
-                  >
-                    Create Rental Booking
-                  </button>
                 </form>
               ) : (
                 <div className="mt-5 text-sm text-gray-600">
