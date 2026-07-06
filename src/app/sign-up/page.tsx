@@ -9,6 +9,12 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FieldKey = "name" | "email" | "password" | "confirmPassword";
 
+const GRID_OVERLAY_STYLE = {
+  backgroundImage:
+    "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+  backgroundSize: "38px 38px",
+} as const;
+
 export default function SignUpPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -119,11 +125,7 @@ export default function SignUpPage() {
           <div className="pointer-events-none absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.06]"
-            style=
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
-              backgroundSize: "38px 38px",
-            
+            style={GRID_OVERLAY_STYLE}
           />
 
           <div className="relative">
