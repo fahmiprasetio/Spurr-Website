@@ -7,10 +7,11 @@ import {
   calculateDailyRate,
   calculateRentalDays,
   createTransactionReference,
-  formatRupiah,
 } from "@/lib/rental";
 import { notifyRentalCreated } from "@/lib/notification-service";
+import { createMidtransSnapTransaction, isMidtransConfigured } from "@/lib/midtrans";
 import { prisma } from "@/lib/prisma";
+import SnapPaymentHandler from "@/components/SnapPaymentHandler";
 import RentalDateFields from "@/components/RentalDateFields";
 
 const ACTIVE_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED", "ACTIVE"];
@@ -33,6 +34,7 @@ type RentalsPageProps = {
   searchParams: Promise<{
     status?: string;
     error?: string;
+    snap_token?: string;
     carId?: string;
   }>;
 };
@@ -70,6 +72,11 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
     getCurrentUser(),
     searchParams,
   ]);
+
+  const clientKey = process.env.MIDTRANS_CLIENT_KEY || "";
+  const isProduction =
+    process.env.MIDTRANS_IS_PRODUCTION === "true" ||
+    process.env.MIDTRANS_IS_PRODUCTION === "1";
 
   if (!user) {
     redirect("/sign-in?next=/rentals");
@@ -243,6 +250,27 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
     revalidatePath("/rentals");
     revalidatePath("/notifications");
     revalidatePath("/admin");
+
+    if (isMidtransConfigured()) {
+      const customerName =
+        currentUser.name?.trim() || currentUser.email.split("@")[0] || "SPURR Driver";
+
+      const gatewaySession = await createMidtransSnapTransaction({
+        orderId: payment.transactionRef,
+        grossAmount: payment.amount,
+        customerName,
+        customerEmail: currentUser.email,
+        itemName: `${car.name} Rental`,
+      }).catch((error) => {
+        console.error("createMidtransSnapTransaction failed:", error);
+        return null;
+      });
+
+      if (gatewaySession) {
+        redirect(`/rentals?snap_token=${gatewaySession.token}`);
+      }
+    }
+
     redirect("/rentals?status=rental-created");
   }
 
@@ -291,11 +319,6 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                     </span>
                   </div>
                   <input type="hidden" name="carId" value={lockedCar.id} />
-                  {lockedDailyRate !== null ? (
-                    <p className="mt-2 text-xs text-gray-500">
-                      Daily rate: {formatRupiah(lockedDailyRate)}
-                    </p>
-                  ) : null}
                   {lockedCarUnavailable ? (
                     <p className="mt-2 text-xs text-red-600">
                       This car is currently unavailable for the selected period.
@@ -320,7 +343,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                 </label>
               )}
 
-              <RentalDateFields todayMinDate={todayMinDate} />
+              <RentalDateFields todayMinDate={todayMinDate} dailyRate={lockedDailyRate} />
 
               <label className="text-sm text-gray-600">
                 Notes (optional)
@@ -343,6 +366,14 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
           </article>
         </div>
       </section>
+
+      {resolvedSearchParams.snap_token ? (
+        <SnapPaymentHandler
+          token={resolvedSearchParams.snap_token}
+          clientKey={clientKey}
+          isProduction={isProduction}
+        />
+      ) : null}
     </main>
   );
 }
