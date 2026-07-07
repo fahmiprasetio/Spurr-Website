@@ -18,6 +18,7 @@ import { createMidtransSnapTransaction, isMidtransConfigured } from "@/lib/midtr
 import { prisma } from "@/lib/prisma";
 import SnapPaymentHandler from "@/components/SnapPaymentHandler";
 import RentalDateFields from "@/components/RentalDateFields";
+import ReceiptModal from "@/components/ReceiptModal";
 
 const BLOCKING_RENTAL_STATUSES: RentalStatus[] = ["CONFIRMED", "ACTIVE"];
 const CANCELLABLE_RENTAL_STATUSES: RentalStatus[] = ["PENDING", "CONFIRMED"];
@@ -27,6 +28,10 @@ const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
   "CREDIT_CARD",
   "VIRTUAL_ACCOUNT",
 ];
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = Object.fromEntries(
+  PAYMENT_METHOD_OPTIONS.map((option) => [option.value, option.label]),
+);
 
 const RENTAL_STATUS_LABEL: Record<string, string> = {
   PENDING: "Awaiting Payment",
@@ -220,6 +225,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
         name: true,
         power: true,
         status: true,
+        stock: true,
       },
     });
 
@@ -231,17 +237,16 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
       redirect(`/rentals?error=car-unavailable&${preserved}`);
     }
 
-    const overlappingRental = await prisma.rental.findFirst({
+    const overlappingCount = await prisma.rental.count({
       where: {
         carId: car.id,
         status: { in: BLOCKING_RENTAL_STATUSES },
         startDate: { lte: endDate },
         endDate: { gte: startDate },
       },
-      select: { id: true },
     });
 
-    if (overlappingRental) {
+    if (overlappingCount >= car.stock) {
       redirect(`/rentals?error=car-unavailable&${preserved}`);
     }
 
@@ -353,7 +358,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
 
     const rental = await prisma.rental.findFirst({
       where: { id: rentalId, userId: currentUser.id },
-      include: { car: { select: { name: true } }, payment: true },
+      include: { car: { select: { name: true, stock: true } }, payment: true },
     });
 
     if (!rental || !rental.payment) {
@@ -372,7 +377,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
       redirect("/rentals?error=payment-gateway-unavailable");
     }
 
-    const conflictingRental = await prisma.rental.findFirst({
+    const conflictingCount = await prisma.rental.count({
       where: {
         carId: rental.carId,
         id: { not: rental.id },
@@ -380,10 +385,9 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
         startDate: { lte: rental.endDate },
         endDate: { gte: rental.startDate },
       },
-      select: { id: true },
     });
 
-    if (conflictingRental) {
+    if (conflictingCount >= rental.car.stock) {
       redirect("/rentals?error=car-unavailable");
     }
 
@@ -574,6 +578,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                     initialStart={resolvedSearchParams.start ?? ""}
                     initialEnd={resolvedSearchParams.end ?? ""}
                     bookedRanges={lockedCarBookedRanges}
+                    stock={lockedCar.stock}
                     carUnavailable={lockedCarUnavailable}
                   />
                 </form>
@@ -698,6 +703,27 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                           <p className="mt-1 text-xs text-gray-500">
                             Ref: {rental.payment.transactionRef}
                           </p>
+                        ) : null}
+                        {rental.payment?.status === "PAID" ? (
+                          <ReceiptModal
+                            transactionRef={rental.payment.transactionRef}
+                            paidAt={
+                              rental.payment.paidAt
+                                ? rental.payment.paidAt.toISOString()
+                                : null
+                            }
+                            customerName={user.name ?? user.email}
+                            customerEmail={user.email}
+                            carLabel={`${rental.car.brand.name} ${rental.car.name}`}
+                            startDate={rental.startDate.toISOString()}
+                            endDate={rental.endDate.toISOString()}
+                            totalDays={rental.totalDays}
+                            paymentMethodLabel={
+                              PAYMENT_METHOD_LABEL[rental.payment.method] ??
+                              rental.payment.method
+                            }
+                            totalAmount={rental.totalAmount}
+                          />
                         ) : null}
                       </div>
                     )}

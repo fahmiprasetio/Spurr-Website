@@ -26,6 +26,27 @@ type SnapPaymentHandlerProps = {
   isProduction: boolean;
 };
 
+async function confirmPaymentStatus(result: unknown): Promise<void> {
+  const orderId =
+    result && typeof result === "object" && "order_id" in result
+      ? String((result as { order_id?: unknown }).order_id ?? "")
+      : "";
+
+  if (!orderId) {
+    return;
+  }
+
+  try {
+    await fetch("/api/payments/midtrans/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId }),
+    });
+  } catch (error) {
+    console.error("failed to confirm payment status:", error);
+  }
+}
+
 export default function SnapPaymentHandler({
   token,
   clientKey,
@@ -37,21 +58,23 @@ export default function SnapPaymentHandler({
   useEffect(() => {
     if (scriptLoaded && window.snap) {
       window.snap.pay(token, {
-        onSuccess: (result) => {
-          console.log("payment success:", result);
+        onSuccess: async (result) => {
+          await confirmPaymentStatus(result);
           router.push("/rentals?status=payment-completed");
+          router.refresh();
         },
-        onPending: (result) => {
-          console.log("payment pending:", result);
+        onPending: async (result) => {
+          await confirmPaymentStatus(result);
           router.push("/rentals?status=payment-pending");
+          router.refresh();
         },
         onError: (result) => {
           console.error("payment error:", result);
           router.push("/rentals?error=payment-failed");
         },
         onClose: () => {
-          console.log("payment modal closed by user");
           router.push("/rentals");
+          router.refresh();
         },
       });
     }

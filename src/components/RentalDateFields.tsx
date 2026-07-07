@@ -10,6 +10,7 @@ type RentalDateFieldsProps = {
   initialStart?: string;
   initialEnd?: string;
   bookedRanges?: BookedRange[];
+  stock?: number;
   carUnavailable?: boolean;
 };
 
@@ -45,20 +46,17 @@ function countRentalDays(start: string, end: string): number {
   return Math.floor((endMs - startMs) / 86400000) + 1;
 }
 
-function findConflict(
-  start: string,
-  end: string,
-  ranges: BookedRange[],
-): BookedRange | null {
+function countOverlaps(start: string, end: string, ranges: BookedRange[]): number {
   if (!start || !end) {
-    return null;
+    return 0;
   }
+  let overlaps = 0;
   for (const range of ranges) {
     if (start <= range.end && end >= range.start) {
-      return range;
+      overlaps += 1;
     }
   }
-  return null;
+  return overlaps;
 }
 
 export default function RentalDateFields({
@@ -67,6 +65,7 @@ export default function RentalDateFields({
   initialStart = "",
   initialEnd = "",
   bookedRanges = [],
+  stock = 1,
   carUnavailable = false,
 }: RentalDateFieldsProps) {
   const [startDate, setStartDate] = useState(initialStart);
@@ -82,13 +81,16 @@ export default function RentalDateFields({
   const days = useMemo(() => countRentalDays(startDate, endDate), [startDate, endDate]);
   const total = dailyRate && days > 0 ? dailyRate * days : 0;
 
-  const conflict = useMemo(
-    () => findConflict(startDate, endDate, bookedRanges),
+  const totalStock = stock > 0 ? stock : 1;
+
+  const overlaps = useMemo(
+    () => countOverlaps(startDate, endDate, bookedRanges),
     [startDate, endDate, bookedRanges],
   );
 
+  const remainingUnits = Math.max(0, totalStock - overlaps);
   const hasValidRange = Boolean(startDate && endDate && days > 0);
-  const isAvailable = hasValidRange && !conflict && !carUnavailable;
+  const isAvailable = hasValidRange && remainingUnits > 0 && !carUnavailable;
   const canSubmit = isAvailable;
 
   return (
@@ -135,7 +137,10 @@ export default function RentalDateFields({
       ) : null}
 
       <div className="rounded-sm border border-black/10 bg-gray-50 p-3 text-sm">
-        <p className="text-xs uppercase tracking-[0.16em] text-gray-400">Availability</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs uppercase tracking-[0.16em] text-gray-400">Availability</p>
+          <span className="text-xs font-medium text-gray-600">{totalStock} units total</span>
+        </div>
 
         {carUnavailable ? (
           <p className="mt-2 border border-red-200 bg-red-50 px-3 py-2 text-red-700">
@@ -143,32 +148,35 @@ export default function RentalDateFields({
           </p>
         ) : bookedRanges.length > 0 ? (
           <div className="mt-2">
-            <p className="text-gray-600">This car is already booked on:</p>
+            <p className="text-gray-600">Active bookings for this car:</p>
             <ul className="mt-1 space-y-1">
               {bookedRanges.map((range, index) => (
                 <li key={`${range.start}-${range.end}-${index}`} className="text-gray-700">
-                  {formatDisplayDate(range.start)} to {formatDisplayDate(range.end)}
+                  - {formatDisplayDate(range.start)} to {formatDisplayDate(range.end)}
                 </li>
               ))}
             </ul>
+            <p className="mt-1 text-xs text-gray-500">
+              A date is only fully booked when all {totalStock} units are taken.
+            </p>
           </div>
         ) : (
           <p className="mt-2 text-gray-600">
-            No active bookings, available for any dates.
+            No active bookings - all {totalStock} units are available.
           </p>
         )}
 
         {!carUnavailable ? (
           hasValidRange ? (
-            conflict ? (
-              <p className="mt-3 border border-red-200 bg-red-50 px-3 py-2 text-red-700">
-                Not available for {formatDisplayDate(startDate)} to {formatDisplayDate(endDate)}.
-                This overlaps a booking on {formatDisplayDate(conflict.start)} to{" "}
-                {formatDisplayDate(conflict.end)}. Please choose other dates.
+            remainingUnits > 0 ? (
+              <p className="mt-3 border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
+                Available for {formatDisplayDate(startDate)} to {formatDisplayDate(endDate)} -{" "}
+                {remainingUnits} of {totalStock} units left.
               </p>
             ) : (
-              <p className="mt-3 border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
-                Available for {formatDisplayDate(startDate)} to {formatDisplayDate(endDate)}.
+              <p className="mt-3 border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                Not available for {formatDisplayDate(startDate)} to {formatDisplayDate(endDate)}.
+                All {totalStock} units are booked for these dates. Please choose other dates.
               </p>
             )
           ) : (
@@ -197,7 +205,7 @@ export default function RentalDateFields({
       >
         {carUnavailable
           ? "Unavailable"
-          : conflict
+          : hasValidRange && remainingUnits <= 0
             ? "Unavailable for selected dates"
             : "Create Rental Booking"}
       </button>

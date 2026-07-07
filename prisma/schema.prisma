@@ -88,6 +88,7 @@ model Car {
   sequencePrefix String?
   sequenceExt    String?
   status         CarStatus @default(AVAILABLE)
+  stock          Int       @default(1)
   brandId        Int
   brand          Brand     @relation(fields: [brandId], references: [id], onDelete: Restrict)
   rentals        Rental[]
