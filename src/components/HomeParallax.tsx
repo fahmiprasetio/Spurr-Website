@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -14,7 +14,7 @@ type HomeParallaxProps = {
 
 const SPLASH_WAIT_CAP = 92;
 const SPLASH_TICK_MS = 24;
-const SPLASH_FALLBACK_READY_MS = 1300;
+const SPLASH_FALLBACK_READY_MS = 4000;
 const SPLASH_EXIT_DELAY_MS = 160;
 const SPLASH_SESSION_KEY = "spurr:splash-seen:v1";
 
@@ -185,3 +185,4 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
     </div>
   );
 }
+

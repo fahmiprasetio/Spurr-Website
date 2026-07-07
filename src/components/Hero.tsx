@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -49,9 +49,9 @@ export default function Hero({
         loop
         muted
         playsInline
-        preload="metadata"
-        onLoadedData={notifyVideoReady}
-        onCanPlay={notifyVideoReady}
+        preload="auto" poster="/car-video/hero-poster.jpg"
+        
+        
         onPlaying={notifyVideoReady}
       />
       <div className="absolute inset-0 bg-black/52" />
@@ -129,3 +129,4 @@ export default function Hero({
     </section>
   );
 }
+
