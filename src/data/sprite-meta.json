@@ -1,0 +1,51 @@
+{
+  "Chiron Super Sport": {
+    "frameW": 900,
+    "frameH": 506,
+    "cols": 18,
+    "rows": 2,
+    "count": 31
+  },
+  "huayra roadster bc": {
+    "frameW": 900,
+    "frameH": 506,
+    "cols": 18,
+    "rows": 2,
+    "count": 21
+  },
+  "Jesko Absolut": {
+    "frameW": 900,
+    "frameH": 506,
+    "cols": 18,
+    "rows": 2,
+    "count": 29
+  },
+  "mclaren p1": {
+    "frameW": 900,
+    "frameH": 506,
+    "cols": 18,
+    "rows": 2,
+    "count": 32
+  },
+  "porsche 911 sequence": {
+    "frameW": 900,
+    "frameH": 506,
+    "cols": 18,
+    "rows": 2,
+    "count": 30
+  },
+  "Rimac Nevera": {
+    "frameW": 900,
+    "frameH": 506,
+    "cols": 18,
+    "rows": 2,
+    "count": 32
+  },
+  "SF90 Stradale sequence": {
+    "frameW": 900,
+    "frameH": 506,
+    "cols": 18,
+    "rows": 2,
+    "count": 30
+  }
+}
