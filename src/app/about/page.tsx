@@ -3,6 +3,30 @@ import { getCarsFromDb } from "@/lib/cars-db";
 
 export const revalidate = 60;
 
+const palette = [
+  {
+    text: "text-amber-600",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    bar: "bg-amber-500",
+    ring: "bg-amber-500/10",
+  },
+  {
+    text: "text-rose-600",
+    bg: "bg-rose-50",
+    border: "border-rose-200",
+    bar: "bg-rose-500",
+    ring: "bg-rose-500/10",
+  },
+  {
+    text: "text-indigo-600",
+    bg: "bg-indigo-50",
+    border: "border-indigo-200",
+    bar: "bg-indigo-500",
+    ring: "bg-indigo-500/10",
+  },
+];
+
 const coreValues = [
   {
     title: "Curated Experience",
@@ -62,16 +86,39 @@ export default async function AboutPage() {
   const brandCount = new Set(cars.map((car) => car.brand)).size;
   const interactiveCount = cars.filter((car) => car.sequenceFolder).length;
 
+  const stats = [
+    {
+      label: "Cars Indexed",
+      value: cars.length,
+      note: "Live inventory synced with the collection feed.",
+    },
+    {
+      label: "Brands Covered",
+      value: brandCount,
+      note: "Global marques with a focus on rare trims.",
+    },
+    {
+      label: "Interactive Models",
+      value: interactiveCount,
+      note: "Frames captured for detailed, touch-driven viewing.",
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-[#f7f4ef] pt-28">
       <section className="w-full bg-[#f7f4ef]">
-        <div className="mx-auto w-full max-w-7xl space-y-10 px-6 pb-12 md:px-8 md:pb-16">
-          <header className="relative overflow-hidden border border-black/10 bg-white p-8 md:p-10">
-            <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(0,0,0,0.04),rgba(0,0,0,0))]" />
+        <div className="mx-auto w-full max-w-7xl space-y-12 px-6 pb-16 md:px-8 md:pb-20">
+          <header className="relative overflow-hidden border border-black/10 bg-white p-8 md:p-12">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(217,119,6,0.14),transparent_55%)]" />
+            <div className="pointer-events-none absolute -right-16 -top-10 h-56 w-56 rounded-full bg-amber-400/10 blur-3xl" />
             <div className="relative">
-              <p className="text-xs uppercase tracking-[0.32em] text-gray-400">About SPURR</p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-black md:text-5xl">
-                Crafted for the Modern Exotic Car Collector
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium uppercase tracking-[0.28em] text-amber-700">
+                About SPURR
+              </span>
+              <h1 className="mt-5 text-4xl font-semibold tracking-tight text-black md:text-5xl">
+                Crafted for the Modern Exotic Car{" "}
+                <span className="text-amber-600">Collector</span>
               </h1>
               <p className="mt-5 max-w-3xl text-sm leading-relaxed text-gray-600 md:text-base">
                 SPURR is a digital showroom built for enthusiasts who want the thrill of discovery with the clarity of
@@ -82,93 +129,139 @@ export default async function AboutPage() {
           </header>
 
           <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <article className="border border-black/10 bg-white p-5">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Cars Indexed</p>
-              <p className="mt-2 text-3xl font-semibold text-black">{cars.length}</p>
-              <p className="mt-3 text-xs text-gray-500">Live inventory synced with the collection feed.</p>
-            </article>
-            <article className="border border-black/10 bg-white p-5">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Brands Covered</p>
-              <p className="mt-2 text-3xl font-semibold text-black">{brandCount}</p>
-              <p className="mt-3 text-xs text-gray-500">Global marques with a focus on rare trims.</p>
-            </article>
-            <article className="border border-black/10 bg-white p-5">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Interactive Models</p>
-              <p className="mt-2 text-3xl font-semibold text-black">{interactiveCount}</p>
-              <p className="mt-3 text-xs text-gray-500">Frames captured for detailed, touch-driven viewing.</p>
-            </article>
+            {stats.map((stat, index) => {
+              const accent = palette[index % palette.length];
+              return (
+                <article
+                  key={stat.label}
+                  className={`group relative overflow-hidden border ${accent.border} bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg`}
+                >
+                  <div className={`pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full ${accent.ring} blur-2xl`} />
+                  <div className="relative">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-1.5 w-1.5 rounded-full ${accent.bar}`} />
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400">{stat.label}</p>
+                    </div>
+                    <p className={`mt-3 text-4xl font-semibold ${accent.text}`}>{stat.value}</p>
+                    <p className="mt-3 text-xs text-gray-500">{stat.note}</p>
+                  </div>
+                </article>
+              );
+            })}
           </section>
 
           <section className="grid grid-cols-1 gap-6 md:grid-cols-[1.1fr_1fr]">
-            <div className="border border-black/10 bg-white p-6">
-              <h2 className="text-2xl font-semibold tracking-tight text-black">Our Story</h2>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
+            <div className="border border-black/10 bg-white p-6 md:p-8">
+              <div className="flex items-center gap-3">
+                <span className="h-6 w-1 rounded-full bg-amber-500" />
+                <h2 className="text-2xl font-semibold tracking-tight text-black">Our Story</h2>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-gray-600">
                 SPURR was born from a love of design, speed, and the culture around automotive craftsmanship. We are
                 building a platform that respects every line, spec, and sound of the vehicles we spotlight.
               </p>
-              <div className="mt-6 space-y-4">
-                {storySteps.map((step) => (
-                  <div key={step.title} className="border-l-2 border-black/10 pl-4">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-black">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600">{step.description}</p>
-                  </div>
-                ))}
+              <div className="relative mt-6 space-y-6">
+                <div className="absolute left-[7px] top-1 bottom-1 w-px bg-gradient-to-b from-amber-500 via-rose-500 to-indigo-500" />
+                {storySteps.map((step, index) => {
+                  const accent = palette[index % palette.length];
+                  return (
+                    <div key={step.title} className="relative pl-8">
+                      <span className={`absolute left-0 top-1 h-3.5 w-3.5 rounded-full ring-4 ring-white ${accent.bar}`} />
+                      <h3 className={`text-sm font-semibold uppercase tracking-[0.18em] ${accent.text}`}>{step.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-gray-600">{step.description}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            <div className="border border-black/10 bg-white p-6">
-              <h2 className="text-2xl font-semibold tracking-tight text-black">The Experience</h2>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
+            <div className="border border-black/10 bg-white p-6 md:p-8">
+              <div className="flex items-center gap-3">
+                <span className="h-6 w-1 rounded-full bg-rose-500" />
+                <h2 className="text-2xl font-semibold tracking-tight text-black">The Experience</h2>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-gray-600">
                 Every touchpoint is designed to feel premium and effortless, from the moment you arrive to the moment
                 you reserve a drive.
               </p>
               <div className="mt-6 space-y-4">
-                {experiencePillars.map((pillar) => (
-                  <article key={pillar.title} className="border border-black/10 bg-[#f7f4ef] p-4">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-black">{pillar.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600">{pillar.description}</p>
-                  </article>
-                ))}
+                {experiencePillars.map((pillar, index) => {
+                  const accent = palette[index % palette.length];
+                  return (
+                    <article
+                      key={pillar.title}
+                      className={`flex gap-4 border border-black/5 border-l-2 ${accent.border} bg-[#f7f4ef] p-4 transition hover:bg-white`}
+                    >
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${accent.bg} ${accent.text}`}>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-black">{pillar.title}</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-gray-600">{pillar.description}</p>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </div>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold tracking-tight text-black">What Makes SPURR Different</h2>
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {coreValues.map((item) => (
-                <article key={item.title} className="border border-black/10 bg-white p-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-black">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{item.description}</p>
-                </article>
-              ))}
+            <div className="flex items-center gap-3">
+              <span className="h-6 w-1 rounded-full bg-indigo-500" />
+              <h2 className="text-2xl font-semibold tracking-tight text-black">What Makes SPURR Different</h2>
+            </div>
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+              {coreValues.map((item, index) => {
+                const accent = palette[index % palette.length];
+                return (
+                  <article
+                    key={item.title}
+                    className="group relative overflow-hidden border border-black/10 bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg"
+                  >
+                    <div className={`absolute inset-x-0 top-0 h-1 ${accent.bar}`} />
+                    <span className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ${accent.bg} ${accent.text}`}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <h3 className="mt-4 text-sm font-semibold uppercase tracking-[0.16em] text-black">{item.title}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-gray-600">{item.description}</p>
+                  </article>
+                );
+              })}
             </div>
           </section>
 
-          <section className="border border-black/10 bg-black p-6 text-white">
-            <h2 className="text-2xl font-semibold tracking-tight">Explore, Save, and Rent</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/80">
-              Ready to explore the collection? You can head straight to the cars page, save your favorites, and
-              continue to rental whenever you are ready.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href="/car"
-                className="border border-white bg-white px-4 py-2 text-xs uppercase tracking-[0.16em] text-black hover:bg-black hover:text-white"
-              >
-                View Cars
-              </Link>
-              <Link
-                href="/wishlist"
-                className="border border-white/30 px-4 py-2 text-xs uppercase tracking-[0.16em] text-white hover:bg-white hover:text-black"
-              >
-                Open Wishlist
-              </Link>
-              <Link
-                href="/rentals"
-                className="border border-white/30 px-4 py-2 text-xs uppercase tracking-[0.16em] text-white hover:bg-white hover:text-black"
-              >
-                Start Rental
-              </Link>
+          <section className="relative overflow-hidden border border-black/10 bg-gradient-to-br from-zinc-900 via-black to-zinc-900 p-8 text-white md:p-10">
+            <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-amber-500/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 right-0 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
+            <div className="relative">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.24em] text-amber-300">
+                Get Started
+              </span>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">Explore, Save, and Rent</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/70">
+                Ready to explore the collection? You can head straight to the cars page, save your favorites, and
+                continue to rental whenever you are ready.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/car"
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2.5 text-xs font-medium uppercase tracking-[0.16em] text-black transition hover:from-amber-400 hover:to-amber-500"
+                >
+                  View Cars
+                </Link>
+                <Link
+                  href="/wishlist"
+                  className="border border-white/25 px-5 py-2.5 text-xs uppercase tracking-[0.16em] text-white transition hover:bg-white hover:text-black"
+                >
+                  Open Wishlist
+                </Link>
+                <Link
+                  href="/rentals"
+                  className="border border-white/25 px-5 py-2.5 text-xs uppercase tracking-[0.16em] text-white transition hover:bg-white hover:text-black"
+                >
+                  Start Rental
+                </Link>
+              </div>
             </div>
           </section>
         </div>
