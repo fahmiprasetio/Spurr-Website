@@ -612,7 +612,7 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
               </p>
             ) : (
               rentals.map((rental) => (
-                <article key={rental.id} className="border border-black/10 bg-white p-5">
+                <article key={rental.id} className="relative border border-black/10 bg-white p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-gray-400">
@@ -705,25 +705,27 @@ export default async function RentalsPage({ searchParams }: RentalsPageProps) {
                           </p>
                         ) : null}
                         {rental.payment?.status === "PAID" ? (
-                          <ReceiptModal
-                            transactionRef={rental.payment.transactionRef}
-                            paidAt={
-                              rental.payment.paidAt
-                                ? rental.payment.paidAt.toISOString()
-                                : null
-                            }
-                            customerName={user.name ?? user.email}
-                            customerEmail={user.email}
-                            carLabel={`${rental.car.brand.name} ${rental.car.name}`}
-                            startDate={rental.startDate.toISOString()}
-                            endDate={rental.endDate.toISOString()}
-                            totalDays={rental.totalDays}
-                            paymentMethodLabel={
-                              PAYMENT_METHOD_LABEL[rental.payment.method] ??
-                              rental.payment.method
-                            }
-                            totalAmount={rental.totalAmount}
-                          />
+                          <div className="absolute bottom-5 right-5">
+                            <ReceiptModal
+                              transactionRef={rental.payment.transactionRef}
+                              paidAt={
+                                rental.payment.paidAt
+                                  ? rental.payment.paidAt.toISOString()
+                                  : null
+                              }
+                              customerName={user.name ?? user.email}
+                              customerEmail={user.email}
+                              carLabel={`${rental.car.brand.name} ${rental.car.name}`}
+                              startDate={rental.startDate.toISOString()}
+                              endDate={rental.endDate.toISOString()}
+                              totalDays={rental.totalDays}
+                              paymentMethodLabel={
+                                PAYMENT_METHOD_LABEL[rental.payment.method] ??
+                                rental.payment.method
+                              }
+                              totalAmount={rental.totalAmount}
+                            />
+                          </div>
                         ) : null}
                       </div>
                     )}
