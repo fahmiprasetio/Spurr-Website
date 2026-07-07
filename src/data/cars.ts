@@ -106,7 +106,7 @@ export const cars: Car[] = [
     topSpeed: "315 km/h",
     acceleration: "2.5s",
     description:
-      "Godzilla — the iconic Japanese supercar that humbles exotics costing twice its price.",
+      "Godzilla - the iconic Japanese supercar that humbles exotics costing twice its price.",
     color: "#DC2626",
     bgGradient: "from-red-50 to-white",
   },

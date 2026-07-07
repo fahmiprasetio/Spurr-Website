@@ -133,7 +133,7 @@ function SignInForm() {
               pursuit.
             </h2>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
-              Sign in to pick up right where you left off — your saved cars and
+              Sign in to pick up right where you left off - your saved cars and
               rentals are waiting.
             </p>
           </div>

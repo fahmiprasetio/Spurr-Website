@@ -127,7 +127,7 @@ export default function RentalDateFields({
           </span>
           {days > 0 ? (
             <span className="ml-2">
-              | Total ({days} {days === 1 ? "day" : "days"}):{" "}
+              · Total ({days} {days === 1 ? "day" : "days"}):{" "}
               <span className="font-semibold text-black">{formatRupiah(total)}</span>
             </span>
           ) : null}
@@ -147,14 +147,14 @@ export default function RentalDateFields({
             <ul className="mt-1 space-y-1">
               {bookedRanges.map((range, index) => (
                 <li key={`${range.start}-${range.end}-${index}`} className="text-gray-700">
-                  {formatDisplayDate(range.start)} to {formatDisplayDate(range.end)}
+                  • {formatDisplayDate(range.start)} – {formatDisplayDate(range.end)}
                 </li>
               ))}
             </ul>
           </div>
         ) : (
           <p className="mt-2 text-gray-600">
-            No active bookings, available for any dates.
+            No active bookings — available for any dates.
           </p>
         )}
 
@@ -162,13 +162,13 @@ export default function RentalDateFields({
           hasValidRange ? (
             conflict ? (
               <p className="mt-3 border border-red-200 bg-red-50 px-3 py-2 text-red-700">
-                Not available for {formatDisplayDate(startDate)} to {formatDisplayDate(endDate)}.
-                This overlaps a booking on {formatDisplayDate(conflict.start)} to{" "}
+                ✕ Not available for {formatDisplayDate(startDate)} – {formatDisplayDate(endDate)}.
+                This overlaps a booking on {formatDisplayDate(conflict.start)} –{" "}
                 {formatDisplayDate(conflict.end)}. Please choose other dates.
               </p>
             ) : (
               <p className="mt-3 border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
-                Available for {formatDisplayDate(startDate)} to {formatDisplayDate(endDate)}.
+                ✓ Available for {formatDisplayDate(startDate)} – {formatDisplayDate(endDate)}.
               </p>
             )
           ) : (
