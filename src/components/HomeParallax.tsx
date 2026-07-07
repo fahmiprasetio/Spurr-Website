@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -133,27 +133,50 @@ export default function HomeParallax({ cars }: HomeParallaxProps) {
       <AnimatePresence>
         {showSplash ? (
           <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed inset-0 z-9999 flex items-center justify-center bg-black"
+            key="spurr-splash"
+            className="fixed inset-0 z-[9999] overflow-hidden"
+            initial={ { opacity: 1 } }
+            animate={ { opacity: 1 } }
           >
-            <div className="w-[min(28rem,84vw)]">
-              <p className="text-center text-[11px] tracking-[0.32em] uppercase text-white/75">
-                Loading SPURR Experience
-              </p>
-              <div className="mt-5 h-1 w-full overflow-hidden bg-white/20">
-                <motion.div
-                  className="h-full bg-white"
-                  animate={{ width: `${loadingProgress}%` }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                />
-              </div>
-              <p className="mt-3 text-right text-sm tracking-wider text-white/85">
+            {/* Cream shutter: dua bagian yang membelah saat loading mencapai 100% */}
+            <motion.span
+              className="absolute inset-x-0 top-0 h-[calc(50%_+_1px)] bg-[#faf0ed]"
+              initial={ { y: 0 } }
+              exit={ { y: "-100%" } }
+              transition={ { duration: 1.15, ease: [0.85, 0, 0.15, 1], delay: 0.08 } }
+            />
+            <motion.span
+              className="absolute inset-x-0 bottom-0 h-[calc(50%_+_1px)] bg-[#faf0ed]"
+              initial={ { y: 0 } }
+              exit={ { y: "100%" } }
+              transition={ { duration: 1.15, ease: [0.85, 0, 0.15, 1], delay: 0.08 } }
+            />
+
+            {/* Wordmark SPURR yang terisi kiri->kanan mengikuti progress loading */}
+            <motion.div
+              className="absolute left-1/2 top-1/2 z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
+              initial={ { opacity: 0, scale: 0.98 } }
+              animate={ { opacity: 1, scale: 1 } }
+              exit={ { opacity: 0, scale: 0.96, y: -10 } }
+              transition={ { duration: 0.6, ease: "easeOut" } }
+            >
+              <span className="relative inline-block">
+                <span className="block whitespace-nowrap pl-[0.4em] text-[clamp(2.75rem,13vw,7.5rem)] font-light uppercase leading-none tracking-[0.4em] text-[#1a1411]/15">
+                  SPURR
+                </span>
+                <span
+                  className="absolute inset-y-0 left-0 overflow-hidden"
+                  style={ { width: `${loadingProgress}%` } }
+                >
+                  <span className="block w-max whitespace-nowrap pl-[0.4em] text-[clamp(2.75rem,13vw,7.5rem)] font-light uppercase leading-none tracking-[0.4em] text-[#1a1411]">
+                    SPURR
+                  </span>
+                </span>
+              </span>
+              <span className="mt-7 text-[11px] font-light uppercase tracking-[0.5em] text-[#1a1411]/45">
                 {loadingProgress}%
-              </p>
-            </div>
+              </span>
+            </motion.div>
           </motion.div>
         ) : null}
       </AnimatePresence>
