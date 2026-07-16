@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const accountRateLimited = checkRateLimit(request, "auth", `email:${emailValidation.data}`);
+    if (accountRateLimited) return accountRateLimited;
+
     const user = await prisma.user.findUnique({ where: { email: emailValidation.data } });
 
     if (!user || !verifyPassword(password, user.passwordHash)) {
