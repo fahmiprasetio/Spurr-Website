@@ -3,5 +3,4 @@ export type CarReviewView = {
   comment: string;
   createdAt: string;
   userName: string;
-  userEmail: string;
 };

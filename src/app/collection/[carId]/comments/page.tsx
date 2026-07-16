@@ -40,7 +40,6 @@ export default async function CarCommentsPage({ params }: CarCommentsPageProps) 
       comment: review.content,
       createdAt: review.createdAt.toISOString(),
       userName: review.user.name?.trim() || fallbackName,
-      userEmail: review.user.email,
     };
   });
 

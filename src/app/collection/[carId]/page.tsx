@@ -186,7 +186,6 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
       comment: review.content,
       createdAt: review.createdAt.toISOString(),
       userName: review.user.name?.trim() || fallbackName,
-      userEmail: review.user.email,
     };
   });
 

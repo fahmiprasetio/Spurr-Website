@@ -2,12 +2,20 @@ import { PrismaClient } from "@prisma/client";
 import { randomBytes, scryptSync } from "crypto";
 import { brands, cars } from "../src/data/cars";
 
+if (process.env.NODE_ENV === "production") {
+  throw new Error("Refusing to run seed script against a production environment.");
+}
+
 const prisma = new PrismaClient();
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hash}`;
+}
+
+function randomSeedPassword(): string {
+  return randomBytes(24).toString("base64url");
 }
 
 const seedReviews = [
@@ -126,7 +134,7 @@ async function main() {
       create: {
         name: review.userName,
         email: review.email,
-        passwordHash: hashPassword("SpurrSeed!234"),
+        passwordHash: hashPassword(randomSeedPassword()),
       },
       select: { id: true },
     });

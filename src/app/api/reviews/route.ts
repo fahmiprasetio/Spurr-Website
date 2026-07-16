@@ -46,7 +46,6 @@ export async function GET(request: NextRequest) {
       comment: review.content,
       createdAt: review.createdAt.toISOString(),
       userName: formatUserName(review.user.name, review.user.email),
-      userEmail: review.user.email,
     })),
   });
 }
@@ -119,7 +118,6 @@ export async function POST(request: NextRequest) {
         comment: created.content,
         createdAt: created.createdAt.toISOString(),
         userName: formatUserName(created.user.name, created.user.email),
-        userEmail: created.user.email,
       },
     },
     { status: 201 }
